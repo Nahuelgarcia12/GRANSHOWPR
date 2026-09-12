@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>El Gran Show - Pulsador</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- PANTALLA 1: INGRESO CON APODO Y PIN / QR -->
+ <!-- PANTALLA 1: INGRESO CON PIN VISIBLE Y APODO -->
+  <div id="pantalla-login" class="contenedor flex-col">
+    <div class="logo-titulo">EL GRAN SHOW</div>
+
+    <!-- Cartel con el PIN de la partida -->
+    <div class="sala-pin-card">
+      <span>CÓDIGO DE SALA DETECTADO</span>
+      <h2 id="display-room-pin">----</h2>
+    </div>
+
+    <form id="form-login" class="flex-col">
+      <input type="text" id="input-pin" placeholder="PIN" maxlength="4" required autocomplete="off">
+      <input type="text" id="input-nombre" placeholder="Tu nombre o apodo" maxlength="15" required autocomplete="off">
+      <p id="login-error" class="login-error-txt oculta"></p>
+      <button type="submit" id="btn-submit" class="btn-entrar">ENTRAR A JUGAR</button>
+    </form>
+  </div>
+
+  <!-- PANTALLA 2: INTERFAZ EN VIVO DEL JUGADOR -->
+  <div id="pantalla-juego" class="contenedor flex-col oculta">
+
+    <header class="header-juego">
+      <div class="logo-mini">EL GRAN SHOW</div>
+      <div id="badge-categoria" class="badge-cat">SALA CONECTADA</div>
+    </header>
+
+    <div class="player-card">
+      <div class="player-info">
+        <span class="avatar-dot"></span>
+        <span id="player-name" class="nombre-txt">Jugador</span>
+      </div>
+      <div id="player-score" class="score-txt">⭐ 0 pts</div>
+    </div>
+
+    <!-- Barra de lectura -->
+    <div class="reading-section">
+      <p id="reading-msg" class="reading-txt">Esperando inicio de tanda...</p>
+      <div class="bar-container">
+        <div id="reading-bar" class="bar-fill"></div>
+      </div>
+    </div>
+
+    <!-- Pulsador 3D -->
+    <div class="buzzer-wrapper">
+      <button id="buzzer-btn" class="buzzer-btn disabled" disabled>
+        <span class="buzzer-top">¡PULSAR!</span>
+      </button>
+    </div>
+
+    <!-- Caja de pregunta (oculta en espera) -->
+    <div id="pregunta-player-box" class="pregunta-player-box oculta">
+      <p id="player-question-txt" class="pregunta-player-txt"></p>
+    </div>
+
+    <!-- Card de feedback (OCULTA POR DEFECTO: solo aparece en turno/rebote) -->
+    <div id="feedback-card" class="feedback-card oculta">
+      <div id="feedback-icon" class="fb-icon">🎤</div>
+      <div class="feedback-texts">
+        <h4 id="feedback-title">¡TENÉS LA PALABRA!</h4>
+        <p id="feedback-sub">Respondé al micrófono</p>
+      </div>
+    </div>
+
+    <footer class="footer-status">
+      <span class="status-dot"></span> Conexión en vivo
+    </footer>
+
+  </div>
+
+  <script src="player.js"></script>
+</body>
+</html>

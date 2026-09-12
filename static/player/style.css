@@ -1,0 +1,412 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  /* Fondo estilo estudio: reflector superior violeta y halo inferior azul */
+  background:
+    radial-gradient(circle at 50% 15%, rgba(139, 92, 246, 0.28) 0%, transparent 55%),
+    radial-gradient(circle at 50% 85%, rgba(14, 165, 233, 0.2) 0%, transparent 60%),
+    #0a0818;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.contenedor {
+  height: 100vh;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.oculta {
+  display: none !important;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* PANTALLA LOGIN */
+#pantalla-login {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 24px;
+}
+
+.logo-titulo {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: #ffcc00;
+  letter-spacing: 2px;
+  text-shadow: 0 0 20px rgba(255, 204, 0, 0.6), 0 4px 10px rgba(0,0,0,0.8);
+}
+
+.subtitulo {
+  color: #cbd5e1;
+  font-size: 1rem;
+}
+
+#form-login {
+  width: 100%;
+  max-width: 320px;
+  gap: 16px;
+}
+
+#input-nombre {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: 2px solid #8b5cf6;
+  background: rgba(18, 14, 38, 0.85);
+  color: #fff;
+  font-size: 1.2rem;
+  text-align: center;
+  font-weight: bold;
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.25);
+}
+
+#input-nombre:focus {
+  border-color: #ffcc00;
+  outline: none;
+  box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
+}
+
+.btn-entrar {
+  padding: 16px;
+  background: linear-gradient(135deg, #ffcc00, #f59e0b);
+  color: #0b0817;
+  border: none;
+  border-radius: 14px;
+  font-size: 1.1rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+}
+
+/* HEADER DEL JUEGO */
+.header-juego {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-mini {
+  font-weight: 900;
+  font-size: 1.1rem;
+  color: #ffcc00;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+}
+
+.badge-cat {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  box-shadow: 0 0 12px rgba(124, 58, 237, 0.5);
+}
+
+/* TARJETA JUGADOR */
+.player-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(26, 20, 56, 0.75);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  padding: 12px 18px;
+  border-radius: 14px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar-dot {
+  width: 14px;
+  height: 14px;
+  background: #ffcc00;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #ffcc00;
+}
+
+.nombre-txt {
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #ffffff;
+}
+
+.score-txt {
+  color: #ffcc00;
+  font-weight: 900;
+  font-size: 1.15rem;
+  text-shadow: 0 0 10px rgba(255, 204, 0, 0.4);
+}
+
+.pregunta-player-box {
+  background: linear-gradient(135deg, #003b46 0%, #075985 60%, #0369a1 100%);
+  border: 2px solid #38bdf8;
+  border-radius: 16px;
+  padding: 16px 20px;
+  text-align: center;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 8px 25px rgba(0, 0, 0, 0.6),
+    0 0 25px rgba(56, 189, 248, 0.45),
+    inset 0 0 15px rgba(56, 189, 248, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.pregunta-player-box::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), transparent);
+  pointer-events: none;
+}
+
+.pregunta-player-txt {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f0f9ff;
+  line-height: 1.35;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  position: relative;
+  z-index: 1;
+}
+
+/* BARRA DE LECTURA */
+.reading-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reading-txt {
+  font-size: 0.85rem;
+  color: #38bdf8;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.bar-container {
+  width: 100%;
+  height: 14px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #ffcc00);
+  box-shadow: 0 0 12px rgba(255, 204, 0, 0.8);
+  border-radius: 10px;
+  transition: width 0.1s linear;
+}
+
+/* EL PULSADOR FÍSICO 3D */
+.buzzer-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.buzzer-btn {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: none;
+  /* Aro exterior dorado metálico */
+  background: radial-gradient(circle, #fde047 30%, #ca8a04 80%, #713f12 100%);
+  box-shadow: 0 16px 0 #452404, 0 25px 30px rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  padding: 16px;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.2s ease;
+}
+
+.buzzer-top {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  /* Domo rojo 3D con luz cenital */
+  background: radial-gradient(circle at 35% 25%, #ff4d4d, #dc2626 55%, #881337 95%);
+  box-shadow: inset 0 -10px 0 #580c20, inset 0 8px 15px rgba(255, 255, 255, 0.5);
+  color: #ffffff;
+  font-size: 2.1rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* Pulsador activo para presionar */
+.buzzer-btn.active {
+  box-shadow: 0 16px 0 #452404, 0 0 45px rgba(255, 204, 0, 0.6), 0 0 70px rgba(220, 38, 38, 0.4);
+  animation: pulsoNeon 1.4s infinite alternate;
+}
+
+@keyframes pulsoNeon {
+  from { filter: drop-shadow(0 0 8px rgba(255, 204, 0, 0.5)); }
+  to { filter: drop-shadow(0 0 24px rgba(255, 204, 0, 0.9)); }
+}
+
+.buzzer-btn.active:active {
+  transform: translateY(12px);
+  box-shadow: 0 4px 0 #452404, 0 6px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* Pulsador bloqueado */
+.buzzer-btn.disabled {
+  filter: grayscale(0.85) brightness(0.45);
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: 0 12px 0 #18181b;
+  animation: none;
+}
+
+/* CARD DE FEEDBACK INFERIOR */
+.feedback-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: rgba(19, 15, 41, 0.85);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.fb-icon {
+  font-size: 2rem;
+}
+
+.feedback-texts h4 {
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.feedback-texts p {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* Feedback: Cuando el jugador gana el turno */
+.feedback-card.ganaste {
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.9), rgba(4, 47, 46, 0.9));
+  border-color: #10b981;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);
+}
+.feedback-card.ganaste h4 { color: #34d399; }
+.feedback-card.ganaste p { color: #a7f3d0; }
+
+/* Feedback: Cuando otro participante gana la mano */
+.feedback-card.perdiste {
+  background: linear-gradient(135deg, rgba(88, 12, 32, 0.9), rgba(43, 6, 16, 0.9));
+  border-color: #ef4444;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.35);
+}
+.feedback-card.perdiste h4 { color: #f87171; }
+.feedback-card.perdiste p { color: #fecaca; }
+
+/* Pie de estado */
+.footer-status {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #34d399;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  margin-right: 6px;
+}
+#input-pin {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: 2px solid #ffcc00;
+  background: rgba(18, 14, 38, 0.85);
+  color: #ffcc00;
+  font-size: 1.3rem;
+  letter-spacing: 4px;
+  text-align: center;
+  font-weight: 900;
+  box-shadow: 0 0 15px rgba(255, 204, 0, 0.2);
+}
+
+#input-pin:focus {
+  outline: none;
+  box-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
+}
+
+.login-error-txt {
+  color: #f87171;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-align: center;
+}
+.sala-pin-card {
+  background: rgba(30, 24, 66, 0.9);
+  border: 2px solid #ffcc00;
+  border-radius: 16px;
+  padding: 14px 20px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+  margin-bottom: 8px;
+}
+
+.sala-pin-card span {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 1px;
+}
+
+.sala-pin-card h2 {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #ffcc00;
+  letter-spacing: 4px;
+  margin-top: 4px;
+}

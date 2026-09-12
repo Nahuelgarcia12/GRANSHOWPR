@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Gran Show - Panel de Control</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="host-header">
+    <div>
+      <h1>EL GRAN SHOW <span>• PANEL DE CONTROL</span></h1>
+      <p id="txt-estado" class="estado-tag">ESTADO: LOBBY</p>
+    </div>
+
+      <div class="header-actions">
+      <button id="btn-iniciar-tanda" class="btn btn-gold">▶ CARGAR TANDA</button>
+      <button id="btn-ver-ranking" class="btn btn-blue" style="background: #0284c7; color: white;">📊 TABLA DE POSICIONES</button>
+      <button id="btn-cambiar-pin" class="btn btn-danger">🔄 CAMBIAR SALA</button>
+      <button id="btn-finalizar-juego" class="btn btn-purple">🏆 PODIO FINAL</button>
+    </div>
+
+  </header>
+
+  <main class="host-grid">
+
+    <!-- COLUMNA IZQUIERDA: CONTROL DE RONDA EN VIVO -->
+    <section class="card-panel">
+      <h2>PREGUNTA EN CURSO</h2>
+
+      <div class="pregunta-box">
+        <span id="txt-categoria" class="badge-cat">CATEGORÍA</span>
+        <p id="txt-consigna" class="consigna-txt">No hay ninguna pregunta activa. Iniciá una tanda o lanzá la siguiente.</p>
+        <div class="solucion-box">
+          <small>RESPUESTA CORRECTA:</small>
+          <strong id="txt-solucion">---</strong>
+        </div>
+      </div>
+
+      <!-- BOTONES DE FLUJO DE JUEGO -->
+      <div class="acciones-ronda">
+        <button id="btn-siguiente" class="btn btn-primary">⏭ LANZAR PREGUNTA</button>
+        <button id="btn-abrir-buzzers" class="btn btn-warning">⚡ ABRIR PULSADORES YA</button>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ZONA DE RESOLUCIÓN DEL TURNO -->
+      <h2>RESOLUCIÓN DE RESPUESTA</h2>
+      <div id="turno-box" class="turno-box espera">
+        <span class="label">QUIEN RESPONDE:</span>
+        <h3 id="txt-ganador">NADIE HA PULSADO</h3>
+      </div>
+
+      <div class="acciones-resolucion">
+        <button id="btn-correcto" class="btn btn-success" disabled>✔ CORRECTO (+10)</button>
+        <button id="btn-incorrecto" class="btn btn-danger" disabled>✖ REBOTE / ERROR</button>
+        <button id="btn-anular" class="btn btn-gray">⛔ ANULAR RONDA</button>
+      </div>
+    </section>
+
+    <!-- COLUMNA DERECHA: JUGADORES CONECTADOS Y RANKING -->
+    <section class="card-panel">
+      <div class="panel-header-ranking">
+        <h2>TABLA DE POSICIONES</h2>
+        <span id="txt-total-jugadores" class="badge-count">0 Jugadores</span>
+      </div>
+
+      <div class="tabla-scroll">
+        <table class="ranking-table">
+          <thead>
+            <tr>
+              <th>Pos</th>
+              <th>Participante</th>
+              <th>Puntos</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr>
+              <td colspan="3" class="sin-datos">Esperando participantes...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="host.js"></script>
+</body>
+</html>

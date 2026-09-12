@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Gran Show - Pantalla Principal</title>
+  <link rel="stylesheet" href="/static/screen/style.css">
+</head>
+<body>
+
+  <!-- VISTA 1: LOBBY -->
+  <section id="vista-lobby" class="pantalla-completa">
+    <header class="lobby-header">
+      <h1 class="titulo-show">EL GRAN SHOW</h1>
+      <p class="bajada-show">¡INGRESÁ DESDE TU CELULAR CON EL CÓDIGO!</p>
+    </header>
+
+    <div class="lobby-center">
+      <div class="tarjeta-acceso">
+        <span class="sub-pin">CÓDIGO DE SALA</span>
+        <h2 id="pin-txt">----</h2>
+      </div>
+
+      <div class="participantes-box">
+        <h3>PARTICIPANTES EN SALA (<span id="count-jugadores">0</span>)</h3>
+        <div id="lista-participantes" class="grid-jugadores"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VISTA 2: JUEGO EN VIVO (TOTALMENTE LIMPIO) -->
+  <section id="vista-juego" class="pantalla-completa oculta">
+    <header class="juego-header">
+      <div class="logo-mini">EL GRAN SHOW</div>
+      <span id="categoria-tag" class="cat-tag">CATEGORÍA</span>
+      <div class="pin-mini">SALA: <strong id="pin-mini-txt">----</strong></div>
+    </header>
+
+    <div class="juego-centro">
+      <div class="consigna-container">
+        <p id="consigna-pantalla" class="consigna-pantalla-txt">Esperando la próxima consigna...</p>
+      </div>
+
+      <div class="tiempo-container">
+        <div id="barra-progreso" class="barra-fill"></div>
+      </div>
+
+      <div id="cartel-turno" class="cartel-turno oculta">
+        <span class="sub-turno">¡PULSÓ PRIMERO!</span>
+        <h2 id="turno-nombre">JUGADOR</h2>
+      </div>
+    </div>
+  </section>
+
+  <!-- VISTA 3: TABLA DE POSICIONES DEDICADA -->
+  <section id="vista-ranking" class="pantalla-completa oculta">
+    <header class="lobby-header">
+      <h1 class="titulo-show">📊 TABLA DE POSICIONES 📊</h1>
+      <p class="bajada-show">ASÍ VIENE EL MARCADOR HASTA EL MOMENTO</p>
+    </header>
+
+    <div class="tabla-leaderboard-box">
+      <ol id="leaderboard-pantalla" class="ranking-filas"></ol>
+    </div>
+  </section>
+
+  <!-- VISTA 4: GRAN PODIO FINAL -->
+  <section id="vista-podio" class="pantalla-completa oculta">
+    <header class="lobby-header">
+      <h1 class="titulo-show">🏆 ¡GRAN PODIO FINAL! 🏆</h1>
+      <p class="bajada-show">LOS CAMPEONES DE LA EDICIÓN DE HOY</p>
+    </header>
+
+    <div class="podio-stage">
+      <div id="podio-p2" class="podio-col p2">
+        <div class="corona-icon">🥈</div>
+        <h3 id="podio-p2-nombre" class="podio-nombre">---</h3>
+        <p id="podio-p2-pts" class="podio-puntos">0 pts</p>
+        <div class="podio-bloque bloque-2">2° PUESTO</div>
+      </div>
+
+      <div id="podio-p1" class="podio-col p1">
+        <div class="corona-icon">👑</div>
+        <h3 id="podio-p1-nombre" class="podio-nombre">---</h3>
+        <p id="podio-p1-pts" class="podio-puntos">0 pts</p>
+        <div class="podio-bloque bloque-1">1° CAMPEÓN</div>
+      </div>
+
+      <div id="podio-p3" class="podio-col p3">
+        <div class="corona-icon">🥉</div>
+        <h3 id="podio-p3-nombre" class="podio-nombre">---</h3>
+        <p id="podio-p3-pts" class="podio-puntos">0 pts</p>
+        <div class="podio-bloque bloque-3">3° PUESTO</div>
+      </div>
+    </div>
+  </section>
+
+  <script src="/static/screen/screen.js"></script>
+</body>
+</html>
