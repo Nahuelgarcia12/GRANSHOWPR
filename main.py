@@ -53,6 +53,10 @@ class GameManager:
         self.host_socket: Optional[WebSocket] = None
         self.screen_socket: Optional[WebSocket] = None
 
+        # NUEVO: qué módulo/juego está activo ahora mismo.
+        # None = sin módulo activo (pantalla de selección / espera)
+        self.modulo_actual: Optional[str] = None
+
         self.questions_queue: List[dict] = []
         self.current_question: Optional[dict] = None
         self.state: str = "LOBBY"
@@ -78,10 +82,25 @@ class GameManager:
             self.screen_socket = None
 
     async def broadcast(self, data: dict):
+
         msg = json.dumps(data)
         for ws in self.connections:
             try:
                 await ws.send_text(msg)
+            except Exception:
+                pass
+
+    async def broadcast_split(self, data_public: dict, data_host_extra: dict):
+
+        msg_public = json.dumps(data_public)
+        msg_host = json.dumps({**data_public, **data_host_extra})
+
+        for ws in self.connections:
+            try:
+                if ws == self.host_socket:
+                    await ws.send_text(msg_host)
+                else:
+                    await ws.send_text(msg_public)
             except Exception:
                 pass
 
@@ -151,6 +170,7 @@ async def websocket_endpoint(ws: WebSocket):
                         "event": "sync_screen",
                         "room_pin": manager.room_pin,
                         "state": manager.state,
+                        "modulo_actual": manager.modulo_actual,
                         "leaderboard": manager.get_leaderboard()
                     }))
 
@@ -160,6 +180,7 @@ async def websocket_endpoint(ws: WebSocket):
                         "event": "sync_state",
                         "room_pin": manager.room_pin,
                         "state": manager.state,
+                        "modulo_actual": manager.modulo_actual,
                         "leaderboard": manager.get_leaderboard()
                     }))
 
@@ -178,6 +199,7 @@ async def websocket_endpoint(ws: WebSocket):
             elif action == "reset_room":
                 manager.room_pin = manager.generate_new_pin()
                 manager.players.clear()
+                manager.modulo_actual = None
                 manager.state = "LOBBY"
                 await manager.broadcast({
                     "event": "room_reset",
@@ -200,13 +222,18 @@ async def websocket_endpoint(ws: WebSocket):
                 for p in manager.players.values():
                     p["blocked_this_round"] = False
 
-                await manager.broadcast({
-                    "event": "new_question",
-                    "categoria": manager.current_question["categoria"],
-                    "consigna": manager.current_question["consigna"],
-                    "respuesta_correcta": manager.current_question["respuesta_correcta"],
-                    "reading_time": 6
-                })
+
+                await manager.broadcast_split(
+                    data_public={
+                        "event": "new_question",
+                        "categoria": manager.current_question["categoria"],
+                        "consigna": manager.current_question["consigna"],
+                        "reading_time": 6
+                    },
+                    data_host_extra={
+                        "respuesta_correcta": manager.current_question["respuesta_correcta"]
+                    }
+                )
 
                 manager.reading_task = asyncio.create_task(manager.auto_open_buzzers(6))
 
@@ -244,6 +271,7 @@ async def websocket_endpoint(ws: WebSocket):
                             break
 
                     manager.state = "ROUND_OVER"
+                    # Acá SÍ se revela la respuesta correcta a todos: la ronda ya terminó.
                     await manager.broadcast({
                         "event": "round_result",
                         "status": "correct",
@@ -304,6 +332,37 @@ async def websocket_endpoint(ws: WebSocket):
                     "event": "game_over",
                     "podium": manager.get_leaderboard()[:3],
                     "full_ranking": manager.get_leaderboard()
+                })
+
+            # 12. NUEVO: INICIAR UN MÓDULO/JUEGO ESPECÍFICO
+            # El animador elige desde el dropdown del panel: "trivia", "bingo_musical",
+            # "minuto_ganar", "pasapalabra", "100_argentinos", etc.
+            elif action == "iniciar_modulo":
+                nuevo_modulo = data.get("modulo")
+                manager.modulo_actual = nuevo_modulo
+                manager.state = "LOBBY"
+                manager.current_question = None
+
+                # Cancelar cualquier tarea de lectura pendiente del módulo anterior
+                if manager.reading_task and not manager.reading_task.done():
+                    manager.reading_task.cancel()
+
+                await manager.broadcast({
+                    "event": "modulo_iniciado",
+                    "modulo": nuevo_modulo
+                })
+
+            # 13. NUEVO: FINALIZAR EL MÓDULO ACTUAL (vuelve a la pantalla de selección)
+            elif action == "finalizar_modulo":
+                if manager.reading_task and not manager.reading_task.done():
+                    manager.reading_task.cancel()
+
+                manager.modulo_actual = None
+                manager.state = "LOBBY"
+
+                await manager.broadcast({
+                    "event": "modulo_finalizado",
+                    "leaderboard": manager.get_leaderboard()
                 })
 
     except WebSocketDisconnect:
