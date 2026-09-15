@@ -95,6 +95,15 @@ function procesarEventoPantalla(data) {
       cartelTurno.classList.remove("oculta");
       break;
 
+    // FIX: faltaba este caso. Sin él, cuando alguien pulsaba y fallaba,
+    // la pantalla grande seguía mostrando el nombre del jugador que ya
+    // perdió su turno, en vez de avisar que el rebote está abierto.
+    case "rebote_active":
+      turnoNombre.innerText = "¡REBOTE! ¿QUIÉN LA ROBA?";
+      cartelTurno.classList.remove("oculta");
+      animarBarra(data.rebote_time || 7);
+      break;
+
     case "round_result":
       cartelTurno.classList.add("oculta");
       if (data.status === "correct") {
