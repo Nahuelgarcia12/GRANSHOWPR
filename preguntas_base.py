@@ -1,10 +1,17 @@
 import sqlite3
 
-PREGUNTAS_100 = [
+PREGUNTAS_300 = [
     # -------------------------------------------------------------
-    # 1. DEPORTES (17 preguntas)
+    # 1. DEPORTES (50 preguntas)
     # -------------------------------------------------------------
     ("¿Qué selección nacional de fútbol ganó el Mundial de Qatar 2022?", "Argentina", "Deportes"),
+    ("¿Quien era el tecnico de la  selección nacional de fútbol en 1978?", "Menotti", "Deportes"),
+    ("¿En que barrio  de Buenos Aires esta la cancha de River?", "Nuñez", "Deportes"),
+    ("¿En que barrio  de Buenos Aires esta la cancha de Velez Sarfield?", "Liniers", "Deportes"),
+    ("¿Con que numero de camiseta jugaba Michael Jordan?", " Con el 23", "Deportes"),
+    ("¿En qué ciudad de la provincia de Buenos Aires nació Juan Martín del Potro?", "Tandil", "Deportes"),
+    ("¿En qué ciudad de la provincia de Buenos Aires nació Emanuel Ginóbili?", "Bahía Blanca", "Deportes"),
+    ("¿De qué nacionalidad era el piloto Ayrton Senna?", "Brasileña", "Deportes"),
     ("¿En qué club europeo disputó Lionel Messi la mayor parte de su carrera profesional?", "FC Barcelona", "Deportes"),
     ("¿Cuántos jugadores por equipo juegan simultáneamente en la cancha en un partido de básquet?", "5", "Deportes"),
     ("¿Quién tiene el récord mundial de velocidad en 100 metros llanos con 9.58 segundos?", "Usain Bolt", "Deportes"),
@@ -20,31 +27,90 @@ PREGUNTAS_100 = [
     ("¿En qué superficie se juega el tradicional torneo de Grand Slam de Wimbledon?", "Césped natural", "Deportes"),
     ("¿Cuál es el estilo de natación que se considera comúnmente el más rápido?", "Crol (o estilo libre)", "Deportes"),
     ("¿Qué selección de fútbol ganó el Mundial de Sudáfrica 2010?", "España", "Deportes"),
+    ("¿En qué sede se disputaron los Juegos Olímpicos del año 2004?", "Atenas", "Deportes"),
     ("¿Cuántos minutos dura oficialmente un tiempo reglamentario en un partido de fútbol sin contar descuentos?", "45 minutos", "Deportes"),
+    ("¿Cada cuántos años se celebran los Juegos Olímpicos de verano?", "Cada 4 años", "Deportes"),
+    ("¿Qué país organizó y ganó el primer Mundial de fútbol en 1930?", "Uruguay", "Deportes"),
+    ("¿Cuántos sets como máximo se juegan en un partido de tenis masculino de Grand Slam?", "5 sets", "Deportes"),
+    ("¿Qué boxeador estadounidense es apodado 'El más grande' y se llamaba originalmente Cassius Clay?", "Muhammad Ali", "Deportes"),
+    ("¿Qué ciclista italiano, apodado 'El Pirata', ganó el Giro de Italia y el Tour de Francia en el mismo año (1998)?", "Marco Pantani", "Deportes"),
+    ("¿Cuántos jugadores conforman un equipo de fútbol dentro de la cancha, incluyendo al arquero?", "11 jugadores", "Deportes"),
+    ("¿Cuántos jugadores conforman un equipo de voley dentro de la cancha, incluyendo al arquero?", "6 jugadores", "Deportes"),
+    ("¿Qué juego utiliza 32 piezas y un tablero de 64 casillas blancas y negras?","Ajedrez", "Deportes"),
+    ("¿En qué ciudad se disputan tradicionalmente las 24 Horas de una icónica carrera de resistencia automovilística francesa?", "Le Mans", "Deportes"),
+    ("¿Qué nadador estadounidense ganó 23 medallas doradas olímpicas, un récord histórico?", "Michael Phelps", "Deportes"),
+    ("¿Cómo se denomina la jugada en béisbol en la que el bateador golpea la pelota fuera de los límites para recorrer las bases?", "Home run (o cuadrangular)", "Deportes"),
+    ("¿En qué club debutó profesionalmente Lionel Messi en el año 2004?", "FC Barcelona", "Deportes"),
+    ("¿En qué estadio de la ciudad de Buenos Aires hace de local el Club Atlético Boca Juniors?", "La Bombonera", "Deportes"),
+    ("¿Quién fue el director técnico de la Selección Argentina de fútbol en el Mundial de México 1986?", "Carlos Salvador Bilardo", "Deportes"),
+    ("¿De qué nacionalidad es el exfutbolista Pele?", "Brasileña", "Deportes"),
+    ("¿De qué nacionalidad es el extenista Rafael nadal?", "Español", "Deportes"),
+    ("¿Qué selección nacional de fútbol ganó más Copas del Mundo en la historia?", "Brasil", "Deportes"),
+    ("¿De qué nacionalidad es el futbolista Cristiano Ronaldo?", "Portugues", "Deportes"),
+    ("¿En qué club de la liga italiana jugó Diego Armando Maradona entre 1984 y 1991?", "Napoli", "Deportes"),
+    ("¿De qué nacionalidad es el boxeador invicto Floyd Mayweather Jr.?", "Estadounidense", "Deportes"),
+    ("¿Cuál es el apodo del boxeador argentino Sergio Martínez?", "Maravilla", "Deportes"),
+    ("¿En qué escudería de Fórmula 1 debutó oficialmente el piloto argentino Franco Colapinto?", "Williams", "Deportes"),
+    ("¿Cuál es la categoría de mayor peso en el boxeo profesional masculino?", "Peso pesado", "Deportes"),
+    ("¿En qué año ganó la Selección Argentina de básquet la medalla de oro olímpica?", "2004", "Deportes"),
+    ("¿Qué piloto argentino fue quíntuple campeón mundial de Fórmula 1 en la década de 1950?", "Juan Manuel Fangio", "Deportes"),
 
     # -------------------------------------------------------------
-    # 2. CINE Y SERIES (17 preguntas)
+    # 2. CINE Y SERIES (50 preguntas)
     # -------------------------------------------------------------
     ("¿Qué director dirigió 'Jurassic Park', 'Tiburón' y 'E.T., el extraterrestre'?", "Steven Spielberg", "Cine y Series"),
     ("¿Qué actor interpretó al excéntrico pirata Jack Sparrow en 'Piratas del Caribe'?", "Johnny Depp", "Cine y Series"),
     ("¿Cómo se llama el villano con armadura oscura y respiración mecánica en 'Star Wars'?", "Darth Vader", "Cine y Series"),
     ("¿Qué película animada de 1995 fue protagonizada por el vaquero Woody y el astronauta Buzz Lightyear?", "Toy Story", "Cine y Series"),
-    ("¿Quién interpreta al personaje de Walter White en la serie 'Breaking Bad'?", "Bryan Cranston", "Cine y Series"),
     ("¿Qué actor protagonizó las películas argentinas 'El secreto de sus ojos' y 'Relatos Salvajes'?", "Ricardo Darín", "Cine y Series"),
     ("¿Cómo se llama la pequeña criatura de 'El Señor de los Anillos' obsesionada con 'Mi tesoro'?", "Gollum", "Cine y Series"),
     ("¿En qué cafetería neoyorquina solían reunirse los protagonistas de la comedia 'Friends'?", "Central Perk", "Cine y Series"),
     ("¿Qué criatura gigante de color verde es el álter ego furioso del doctor Bruce Banner en Marvel?", "Hulk", "Cine y Series"),
     ("¿Quién dirigió las películas de ciencia ficción 'Inception', 'Interstellar' y 'Oppenheimer'?", "Christopher Nolan", "Cine y Series"),
     ("¿Qué actor interpretó a Jack Dawson en la galardonada película 'Titanic' de 1997?", "Leonardo DiCaprio", "Cine y Series"),
-    ("¿Cómo se llama el reino ficticio gobernado por Mufasa en 'El Rey León'?", "Las Tierras del Reino (Pride Lands)", "Cine y Series"),
     ("¿Qué superhéroe multimillonario de Marvel construye una armadura con un reactor Arc en el pecho?", "Iron Man (Tony Stark)", "Cine y Series"),
     ("¿Cómo se llama la escuela de magia a la que asiste el joven Harry Potter?", "Hogwarts", "Cine y Series"),
-    ("¿Qué droide blanco y azul emite pitidos y acompaña a Luke Skywalker en Star Wars?", "R2-D2", "Cine y Series"),
+    ("¿Qué androide blanco y azul emite pitidos y acompaña a Luke Skywalker en Star Wars?", "R2-D2", "Cine y Series"),
     ("¿Quién compuso la música instrumental de 'Star Wars', 'Indiana Jones' y 'Harry Potter'?", "John Williams", "Cine y Series"),
-    ("¿Qué actor dio vida a Neo en la saga de ciencia ficción 'Matrix'?", "Keanu Reeves", "Cine y Series"),
+    ("¿Cómo se llama el payaso tenebroso que aterroriza a un grupo de niños en la novela y película 'It'?", "Pennywise", "Cine y Series"),
+    ("¿Qué actriz interpretó a Hermione Granger en la saga cinematográfica de Harry Potter?", "Emma Watson", "Cine y Series"),
+    ("¿Qué serie estadounidense de HBO está ambientada en el continente ficticio de Westeros?", "Game of Thrones (Juego de Tronos)", "Cine y Series"),
+    ("¿Qué director es conocido por películas de suspenso como 'Kill Bill' y 'Pulp Fiction'?", "Quentin Tarantino", "Cine y Series"),
+    ("¿Cómo se llama el barco en el que viajan los protagonistas de la película 'Titanic'?", "RMS Titanic", "Cine y Series"),
+    ("¿Qué actor interpreta al Joker en la película 'Guasón' de 2019?", "Joaquin Phoenix", "Cine y Series"),
+    ("¿En qué ciudad ficticia se desarrolla la mayoría de las historias de Batman?", "Ciudad Gótica", "Cine y Series"),
+    ("¿Cómo se llama el león protagonista del clásico animado 'El Rey León'?", "Simba", "Cine y Series"),
+    ("¿Qué actor encarnó al detective Sherlock Holmes en la serie contemporánea de la BBC?", "Benedict Cumberbatch", "Cine y Series"),
+    ("¿Cómo se llama la criatura alienígena cazadora invisible que combate Arnold Schwarzenegger en la selva en 1987?", "Depredador (Predator)", "Cine y Series"),
+    ("¿Qué actor interpretó a Michael Scott en la versión estadounidense de la comedia 'The Office'?", "Steve Carell", "Cine y Series"),
+    ("¿Cómo se llama el líder de la banda de gánsteres de Birmingham interpretado por Cillian Murphy en 'Peaky Blinders'?", "Tommy Shelby", "Cine y Series"),
+    ("¿Qué actor personificó a Forrest Gump en la premiada película de 1994?", "Tom Hanks", "Cine y Series"),
+    ("¿En qué pueblo ficticio del estado de Indiana transcurren los sucesos de la serie 'Stranger Things'?", "Hawkins", "Cine y Series"),
+    ("¿Cómo se llama la espada láser que utilizan los caballeros Jedi y Sith en el universo de 'Star Wars'?", "Sable de luz", "Cine y Series"),
+    ("¿Qué serie de comedia animada sigue las aventuras de un científico alcohólico y su nieto neurótico por el multiverso?", "Rick y Morty", "Cine y Series"),
+    ("¿Qué actor interpretó a Rocky Balboa a lo largo de toda su saga cinematográfica?", "Sylvester Stallone", "Cine y Series"),
+    ("¿En qué película animada de Disney las hermanas Elsa y Anna son las protagonistas?", "Frozen", "Cine y Series"),
+    ("¿Qué famosa frase dice el personaje de Arnold Schwarzenegger antes de marcharse en 'Terminator 2'?", "Hasta la vista, baby", "Cine y Series"),
+    ("¿Quién interpretó a Marty McFly en la trilogía clásica de ciencia ficción 'Volver al Futuro'?", "Michael J. Fox", "Cine y Series"),
+    ("¿Qué grupo de cuatro investigadores paranormales utiliza mochilas de protones en Nueva York?", "Los Cazafantasmas (Ghostbusters)", "Cine y Series"),
+    ("¿Cómo se llama el ogro verde que vive en un pantano en la película animada de DreamWorks?", "Shrek", "Cine y Series"),
+    ("¿Qué serie de televisión argentina de culto relata las misiones de Santos, Lamponne, Ravenna y Medina?", "Los Simuladores", "Cine y Series"),
+    ("¿Qué actor protagonizó 'El Lobo de Wall Street' dando vida al corredor de bolsa Jordan Belfort?", "Leonardo DiCaprio", "Cine y Series"),
+    ("¿Cómo se llama la nave espacial de Han Solo y Chewbacca en 'Star Wars'?", "El Halcón Milenario", "Cine y Series"),
+    ("¿De qué materia era profesor de secundaria Walter White en 'Breaking Bad'?", "Química", "Cine y Series"),
+    ("¿Qué personaje interpretaba Jennifer Aniston en la serie 'Friends'?", "Rachel Green", "Cine y Series"),
+    ("¿En qué ciudad ficticia vive la familia protagonista de 'Los Simpson'?", "Springfield", "Cine y Series"),
+    ("¿Qué acontecimiento le otorgó sus superpoderes a Peter Parker para convertirse en Spider-Man?", "La picadura de una araña radioactiva", "Cine y Series"),
+    ("¿Cuál es el nombre de pila terrícola con el que creció Superman?", "Clark Kent", "Cine y Series"),
+    ("¿Cómo se llama la simpática grúa oxidada y mejor amigo del Rayo McQueen en la película 'Cars'?", "Mate", "Cine y Series"),
+    ("¿Cómo se llama el expresivo caballo blanco de la guardia real en la película de Disney 'Enredados'?", "Maximus", "Cine y Series"),
+    ("¿Cómo se llama el principal villano y mago tenebroso en la saga de 'Harry Potter'?", "Lord Voldemort", "Cine y Series"),
+    ("¿En qué lugar trabaja Homero Simpson en la serie animada 'Los Simpson'?", "Planta de energía nuclear de Springfield", "Cine y Series"),
+    ("¿Cómo se llamaba el personaje interpretado por Guillermo Francella en la comedia argentina 'Casados con hijos'?", "Pepe Argento", "Cine y Series"),
+    ("¿En qué número de departamento vivía Doña Clotilde, 'La bruja ', en la vecindad de El Chavo del 8?", "71", "Cine y Series"),
 
     # -------------------------------------------------------------
-    # 3. MÚSICA (16 preguntas)
+    # 3. MÚSICA (50 preguntas)
     # -------------------------------------------------------------
     ("¿Cuál es el álbum musical más vendido de toda la historia a nivel global?", "Thriller (Michael Jackson)", "Música"),
     ("¿Quién es universalmente recordado como 'El Rey del Rock and Roll'?", "Elvis Presley", "Música"),
@@ -62,9 +128,43 @@ PREGUNTAS_100 = [
     ("¿En qué ciudad estadounidense del sur nació el género musical Jazz a finales del siglo XIX?", "Nueva Orleans", "Música"),
     ("¿Qué instrumento tradicional de fuelles es el emblema sonoro del tango rioplatense?", "El bandoneón", "Música"),
     ("¿Qué banda australiana de hard rock compuso clásicos como 'Highway to Hell' y 'Back in Black'?", "AC/DC", "Música"),
+    ("¿Quién es conocido como 'El Rey del Pop' tras el éxito de su álbum Thriller?", "Michael Jackson", "Música"),
+    ("¿Qué cantante colombiana es autora de éxitos como 'Waka Waka' y 'Hips Don't Lie'?", "Shakira", "Música"),
+    ("¿Cuántas cuerdas tiene tradicionalmente un violín?", "4 cuerdas", "Música"),
+    ("¿Qué banda de rock argentina compuso el clásico 'Matador'?", "Los Fabulosos Cadillacs", "Música"),
+    ("¿Qué cantante puertorriqueño interpreta el éxito mundial 'Despacito'?", "Luis Fonsi", "Música"),
+    ("¿Qué compositor austríaco del siglo XVIII es autor de 'Las Bodas de Fígaro' y 'La Flauta Mágica'?", "Wolfgang Amadeus Mozart", "Música"),
+    ("¿Qué legendaria banda británica de rock lidera el cantante Mick Jagger?", "The Rolling Stones", "Música"),
+    ("¿En qué ciudad estadounidense fue asesinado John Lennon en diciembre de 1980?", "Nueva York", "Música"),
+    ("¿Qué artista puertorriqueño de música urbana es conocido como 'El Conejo Malo'?", "Bad Bunny", "Música"),
+    ("¿Qué icónico cantante jamaiquino popularizó la música reggae en todo el mundo?", "Bob Marley", "Música"),
+    ("¿Qué banda estadounidense de hard rock liderada por Axl Rose compuso 'Sweet Child O' Mine'?", "Guns N' Roses", "Música"),
+    ("¿Qué cantante británico compuso e interpretó baladas como 'Shape of You' y 'Perfect'?", "Ed Sheeran", "Música"),
+    ("¿Qué instrumento de percusión con membrana es el más grave de una batería estándar?", "El bombo", "Música"),
+    ("¿Qué banda británica de rock progresivo lanzó el famoso disco 'The Dark Side of the Moon'?", "Pink Floyd", "Música"),
+    ("¿Quién es el líder y vocalista de la emblemática banda de rock argentina Patricio Rey y sus Redonditos de Ricota?", "Carlos 'Indio' Solari", "Música"),
+    ("¿Qué cantante de reggaeton es considerado uno de los pioneros del género y popularizó 'Gasolina'?", "Daddy Yankee", "Música"),
+    ("¿En qué país europeo se originó el ritmo y baile tradicional del flamenco?", "España", "Música"),
+    ("¿Qué banda de heavy metal británica tiene a Eddie the Head como su icónica mascota?", "Iron Maiden", "Música"),
+    ("¿Cómo se llama el productor y DJ argentino famoso por sus 'Music Sessions' con artistas globales?", "Bizarrap", "Música"),
+    ("¿Qué cantautor argentino compuso canciones emblemáticas como 'El amor después del amor'?", "Fito Páez", "Música"),
+    ("¿Qué familia de instrumentos incluye la flauta traversa, el clarinete y el fagot?", "Instrumentos de viento madera", "Música"),
+    ("¿Qué famosa banda británica de pop-rock lidera Chris Martin?", "Coldplay", "Música"),
+    ("¿Qué cantante británica saltó a la fama mundial con canciones como 'Rolling in the Deep' y 'Hello'?", "Adele", "Música"),
+    ("¿Qué emblemática banda argentina de rock fue liderada por Norberto  Napolitano?", "Pappo's Blues (o Riff)", "Música"),
+    ("¿Qué cantante mexicano es conocido mundialmente como 'El Sol de México'?", "Luis Miguel", "Música"),
+    ("¿Qué banda argentina de rock lideró Andrés Ciro Martínez tras la separación de Los Piojos?", "Ciro y los Persas", "Música"),
+    ("¿Cuántas líneas paralelas componen un pentagrama tradicional de notación musical?", "5 líneas", "Música"),
+    ("¿Qué artista colombiana de música urbana es apodada 'La Bichota'?", "Karol G", "Música"),
+    ("¿Qué grupo sueco de música pop triunfó en Eurovisión en 1974 con la canción 'Waterloo'?", "ABBA", "Música"),
+    ("¿Qué emblemática banda argentina de rock nacional interpretaba el tema 'Ji ji ji'?", "Patricio Rey y sus Redonditos de Ricota", "Música"),
+    ("¿En qué ciudad argentina Charly García protagonizó en el año 2000 el mítico salto a una pileta desde el noveno piso de un hotel?", "Mendoza", "Música"),
+    ("¿Cómo se autodenominan los fanáticos y seguidoras de la cantante estadounidense Taylor Swift?", "Swifties", "Música"),
+    ("¿Cuál era el popular apodo del cantante cordobés de cuarteto Rodrigo Bueno?", "El Potro", "Música"),
+    ("¿Qué cantante estadounidense es conocido por éxitos mundiales como 'Just the Way You Are', 'Locked Out of Heaven' y 'Uptown Funk'?", "Bruno Mars", "Música"),
 
     # -------------------------------------------------------------
-    # 4. HISTORIA Y GEOGRAFÍA (17 preguntas)
+    # 4. HISTORIA Y GEOGRAFÍA (50 preguntas)
     # -------------------------------------------------------------
     ("¿En qué año llegó la expedición de Cristóbal Colón a tierras americanas?", "1492", "Historia y Geografía"),
     ("¿En qué año se inició la Revolución Francesa con la toma de la fortaleza de la Bastilla?", "1789", "Historia y Geografía"),
@@ -83,9 +183,42 @@ PREGUNTAS_100 = [
     ("¿Qué civilización precolombina levantó la ciudadela de piedra de Machu Picchu?", "Imperio Inca", "Historia y Geografía"),
     ("¿En qué país actual se encuentran las famosas pirámides de Keops, Kefrén y Micerino?", "Egipto", "Historia y Geografía"),
     ("¿Cuál es el océano más grande del mundo en superficie y volumen?", "Océano Pacífico", "Historia y Geografía"),
+    ("¿Qué muralla defensiva de miles de kilómetros se construyó en China para protegerse de invasiones?", "La Gran Muralla China", "Historia y Geografía"),
+    ("¿En qué año comenzó la Primera Guerra Mundial?", "1914", "Historia y Geografía"),
+    ("¿Qué desierto es el más extenso y cálido del mundo, ubicado en el norte de África?", "El desierto del Sahara", "Historia y Geografía"),
+    ("¿Cuál es el país con mayor población del mundo actualmente?", "India", "Historia y Geografía"),
+    ("¿Qué emperador francés fue derrotado definitivamente en la batalla de Waterloo en 1815?", "Napoleón Bonaparte", "Historia y Geografía"),
+    ("¿Cuál es el lago de agua dulce más grande del mundo por volumen, ubicado en Rusia?", "Lago Baikal", "Historia y Geografía"),
+    ("¿Qué antigua civilización construyó el Coliseo y dominó gran parte de Europa, África del Norte y Medio Oriente?", "El Imperio Romano", "Historia y Geografía"),
+    ("¿Cuál es la ciudad más poblada de Argentina y su capital?", "Buenos Aires", "Historia y Geografía"),
+    ("¿En qué año comenzó la Segunda Guerra Mundial?", "1939", "Historia y Geografía"),
+    ("¿Cómo se conoce a la revolución rusa de 1917 que llevó a los bolcheviques al poder liderados por Lenin?", "Revolución de Octubre", "Historia y Geografía"),
+    ("¿Cuál es la capital de Francia?", "París", "Historia y Geografía"),
+    ("¿Cuál es la capital de España?", "Madrid", "Historia y Geografía"),
+    ("¿Cuál es la capital de Italia?", "Roma", "Historia y Geografía"),
+    ("¿Cuál es la capital del Reino Unido?", "Londres", "Historia y Geografía"),
+    ("¿Cuál es la capital de Alemania?", "Berlín", "Historia y Geografía"),
+    ("¿Cuál es la capital de Egipto?", "El Cairo", "Historia y Geografía"),
+    ("¿Cuál es la capital de Japón?", "Tokio", "Historia y Geografía"),
+    ("¿Cuál es la capital de China?", "Pekín", "Historia y Geografía"),
+    ("¿Qué faraón egipcio es famoso por la máscara de oro hallada en su tumba en 1922?", "Tutankamón", "Historia y Geografía"),
+    ("¿Qué civilización precolombina construyó la ciudad de Chichén Itzá en México?", "Los mayas", "Historia y Geografía"),
+    ("¿Qué explorador portugués dirigió la primera expedición en completar la vuelta al mundo?", "Fernando de Magallanes", "Historia y Geografía"),
+    ("¿Qué país europeo tiene una forma característica similar a una bota en el mapa?", "Italia", "Historia y Geografía"),
+    ("¿Cuál es el desierto de hielo más grande del mundo?", "La Antártida", "Historia y Geografía"),
+    ("¿Cuál es el río más largo de Europa?", "El río Volga", "Historia y Geografía"),
+    ("¿Qué canal artificial conecta el mar Mediterráneo con el mar Rojo?", "El Canal de Suez", "Historia y Geografía"),
+    ("¿Cuál es el continente más grande del mundo por superficie?", "Asia", "Historia y Geografía"),
+    ("¿En qué continente se encuentra Egipto?", "África", "Historia y Geografía"),
+    ("¿Cuál es la capital de Perú?", "Lima", "Historia y Geografía"),
+    ("¿Cuál es la capital de Chile?", "Santiago", "Historia y Geografía"),
+    ("¿Cuál es la capital de Colombia?", "Bogotá", "Historia y Geografía"),
+    ("¿Cuál es el país más pequeño de América del Sur?", "Surinam", "Historia y Geografía"),
+    ("¿Qué océano bordea la costa este de Argentina?", "El Océano Atlántico", "Historia y Geografía"),
+    ("¿En qué año se produjo la Revolución de Mayo en Buenos Aires?", "1810", "Historia y Geografía"),
 
     # -------------------------------------------------------------
-    # 5. CIENCIA Y TECNOLOGÍA (17 preguntas)
+    # 5. CIENCIA Y TECNOLOGÍA (50 preguntas)
     # -------------------------------------------------------------
     ("¿Cuál es el elemento químico más ligero y abundante del universo observable?", "Hidrógeno (H)", "Ciencia y Tecnología"),
     ("¿Qué planeta se encuentra más próximo al Sol en el sistema solar?", "Mercurio", "Ciencia y Tecnología"),
@@ -104,9 +237,42 @@ PREGUNTAS_100 = [
     ("¿Qué compañía multinacional de tecnología creó los teléfonos iPhone y las computadoras Mac?", "Apple", "Ciencia y Tecnología"),
     ("¿Qué famoso motor de búsqueda en Internet fue creado por Larry Page y Sergey Brin?", "Google", "Ciencia y Tecnología"),
     ("¿Qué tipo de sangre humana es clasificada como donante universal de glóbulos rojos?", "O negativo (O-)", "Ciencia y Tecnología"),
+    ("¿Cuál es el hueso más largo del cuerpo humano?", "El fémur", "Ciencia y Tecnología"),
+    ("¿Qué física polaco-francesa fue la primera persona en ganar dos premios Nobel en distintas ciencias?", "Marie Curie", "Ciencia y Tecnología"),
+    ("¿Cuántos planetas conforman actualmente el sistema solar según la clasificación oficial?", "8 planetas", "Ciencia y Tecnología"),
+    ("¿Qué científico italiano es considerado el padre de la astronomía observacional moderna gracias al telescopio?", "Galileo Galilei", "Ciencia y Tecnología"),
+    ("¿Cuál es el órgano más grande del cuerpo humano?", "La piel", "Ciencia y Tecnología"),
+    ("¿Qué red social fue fundada por Mark Zuckerberg en la Universidad de Harvard?", "Facebook", "Ciencia y Tecnología"),
+    ("¿Qué gas es el principal responsable del efecto invernadero de origen humano?", "Dióxido de carbono (CO2)", "Ciencia y Tecnología"),
+    ("¿Cuál es la unidad básica de la herencia genética?", "El gen", "Ciencia y Tecnología"),
+    ("¿Qué parte de la célula contiene el material genético?", "El núcleo", "Ciencia y Tecnología"),
+    ("¿Qué científico formuló la teoría heliocéntrica, según la cual el Sol y no la Tierra está en el centro?", "Nicolás Copérnico", "Ciencia y Tecnología"),
+    ("¿Cuántos pares de cromosomas tiene una célula humana normal?", "23 pares", "Ciencia y Tecnología"),
+    ("¿Qué invento de Alexander Graham Bell revolucionó las comunicaciones en 1876?", "El teléfono", "Ciencia y Tecnología"),
+    ("¿Qué proceso realizan las plantas para transformar la luz solar en energía?", "La fotosíntesis", "Ciencia y Tecnología"),
+    ("¿Cuál es el único metal que es líquido a temperatura ambiente?", "El mercurio", "Ciencia y Tecnología"),
+    ("¿Qué órgano del cuerpo humano produce la insulina?", "El páncreas", "Ciencia y Tecnología"),
+    ("¿Cuál es el planeta conocido popularmente como el 'planeta rojo'?", "Marte", "Ciencia y Tecnología"),
+    ("¿Qué gas noble, más liviano que el aire, se usa comúnmente para inflar globos?", "Helio", "Ciencia y Tecnología"),
+    ("¿Qué vacuna, desarrollada por Edward Jenner, permitió erradicar la viruela?", "La vacuna antivariólica", "Ciencia y Tecnología"),
+    ("¿Qué mide la escala de Richter?", "La magnitud de los terremotos", "Ciencia y Tecnología"),
+    ("¿Qué gas compone aproximadamente el 78% del aire que respiramos?", "Nitrógeno", "Ciencia y Tecnología"),
+    ("¿Qué significan las siglas 'WWW' en internet?", "World Wide Web", "Ciencia y Tecnología"),
+    ("¿Cómo se llamó la primera oveja clonada exitosamente en 1996?", "Dolly", "Ciencia y Tecnología"),
+    ("¿Qué parte del ojo humano regula la cantidad de luz que entra, dándole color al iris?", "El iris", "Ciencia y Tecnología"),
+    ("¿Cuántos huesos tiene aproximadamente una mano humana, incluyendo la muñeca?", "27 huesos", "Ciencia y Tecnología"),
+    ("¿Qué inventor estadounidense es considerado el padre de la lamparita eléctrica incandescente moderna?", "Thomas Edison", "Ciencia y Tecnología"),
+    ("¿Qué unidad del Sistema Internacional se usa para medir la intensidad de la corriente eléctrica?", "El amperio", "Ciencia y Tecnología"),
+    ("¿Qué científico francés creó la primera vacuna exitosa contra la rabia?", "Louis Pasteur", "Ciencia y Tecnología"),
+    ("¿Cómo se llama la galaxia en la que se encuentra nuestro sistema solar?", "La Vía Láctea", "Ciencia y Tecnología"),
+    ("¿Qué gas representa cerca del 21% del aire y es esencial para la respiración humana?", "Oxígeno", "Ciencia y Tecnología"),
+    ("¿Qué empresa desarrolló el sistema operativo Android para celulares?", "Google", "Ciencia y Tecnología"),
+    ("¿Qué unidad del Sistema Internacional se usa para medir la fuerza?", "El newton", "Ciencia y Tecnología"),
+    ("¿Cómo se llama el proceso mediante el cual el agua pasa de estado líquido a gaseoso?", "La evaporación", "Ciencia y Tecnología"),
+    ("¿Cuál es el astro natural más cercano a la Tierra en el espacio?", "La Luna", "Ciencia y Tecnología"),
 
     # -------------------------------------------------------------
-    # 6. CULTURA GENERAL (16 preguntas)
+    # 6. CULTURA GENERAL (50 preguntas)
     # -------------------------------------------------------------
     ("¿Cuántos días tiene un año que es bisiesto?", "366 días", "Cultura General"),
     ("¿Cuántos meses del calendario gregoriano poseen exactamente 31 días?", "7 meses", "Cultura General"),
@@ -123,10 +289,45 @@ PREGUNTAS_100 = [
     ("¿Qué metal noble y precioso tiene como símbolo químico las letras 'Au'?", "Oro", "Cultura General"),
     ("¿Qué filósofo griego fue maestro de Platón y fue condenado a morir bebiendo cicuta?", "Sócrates", "Cultura General"),
     ("¿Sobre cuántas casillas cuadradas alternadas de dos colores se disputa el juego del ajedrez?", "64 casillas", "Cultura General"),
-    ("¿Qué animal mitológico egipcio posee cuerpo de león y cabeza humana?", "La Esfinge", "Cultura General")
+    ("¿Qué animal mitológico egipcio posee cuerpo de león y cabeza humana?", "La Esfinge", "Cultura General"),
+    ("¿Cuántos lados tiene un heptágono?", "7 lados", "Cultura General"),
+    ("¿Qué escritor argentino es autor de cuentos célebres como 'El Aleph' y 'Ficciones'?", "Jorge Luis Borges", "Cultura General"),
+    ("¿Qué pintor español es autor de la obra 'Guernica', símbolo contra la guerra?", "Pablo Picasso", "Cultura General"),
+    ("¿Cuál es el animal terrestre más grande del mundo actualmente?", "El elefante africano", "Cultura General"),
+    ("¿Qué bebida tradicional argentina se toma en una calabaza o mate con bombilla?", "El mate", "Cultura General"),
+    ("¿Cuántas patas tiene una araña?", "8 patas", "Cultura General"),
+    ("¿Qué escritora británica creó al famoso mago Harry Potter?", "J. K. Rowling", "Cultura General"),
+    ("¿Qué escritor inglés creó al detective Sherlock Holmes?", "Arthur Conan Doyle", "Cultura General"),
+    ("¿Qué pintor holandés es autor de 'La Noche Estrellada'?", "Vincent van Gogh", "Cultura General"),
+    ("¿Qué filósofo griego, discípulo de Sócrates, escribió 'La República'?", "Platón", "Cultura General"),
+    ("¿Qué escritor ruso es autor de la novela 'Crimen y Castigo'?", "Fiódor Dostoievski", "Cultura General"),
+    ("¿Cómo se llama la escultura griega sin brazos que se exhibe en el Museo del Louvre?", "La Venus de Milo", "Cultura General"),
+    ("¿Qué escritor argentino es autor de la novela 'Rayuela'?", "Julio Cortázar", "Cultura General"),
+    ("¿Qué pintor muralista mexicano fue esposo de Frida Kahlo?", "Diego Rivera", "Cultura General"),
+    ("¿Qué idioma oficial se habla en Brasil?", "Portugués", "Cultura General"),
+    ("¿Qué alfabeto utiliza tradicionalmente el idioma ruso?", "El alfabeto cirílico", "Cultura General"),
+    ("¿Qué escritor y poeta chileno ganó el Premio Nobel de Literatura en 1971?", "Pablo Neruda", "Cultura General"),
+    ("¿Cuál es la moneda oficial de Japón?", "El yen", "Cultura General"),
+    ("¿Qué religión monoteísta tiene al Corán como su libro sagrado?", "El Islam", "Cultura General"),
+    ("¿A qué mitología pertenece Zeus como dios principal del panteón?", "La mitología griega", "Cultura General"),
+    ("¿Qué escritora inglesa es autora de la novela 'Orgullo y Prejuicio'?", "Jane Austen", "Cultura General"),
+    ("¿Qué mago escapista, nacido Erik Weisz, es considerado el más famoso de la historia?", "Harry Houdini", "Cultura General"),
+    ("¿Cuál es el deporte considerado nacional de Japón?", "El sumo", "Cultura General"),
+    ("¿Qué arquitecto catalán diseñó la Sagrada Familia en Barcelona?", "Antoni Gaudí", "Cultura General"),
+    ("¿Cuántos continentes hay en el planeta, según el criterio más usado en países hispanohablantes?", "6 continentes", "Cultura General"),
+    ("¿Cuántas letras tiene el abecedario español?", "27 letras", "Cultura General"),
+    ("¿Cuál es el idioma con más hablantes nativos del mundo?", "El chino mandarín", "Cultura General"),
+    ("¿Qué instrumento se usa tradicionalmente para medir la temperatura corporal?", "El termómetro", "Cultura General"),
+    ("¿Qué gas se usa en los carteles luminosos que brillan típicamente en color rojo o naranja?", "El neón", "Cultura General"),
+    ("¿Cuál es el punto cardinal opuesto al norte?", "El sur", "Cultura General"),
+    ("¿Qué insecto poliniza flores y produce miel viviendo en colonias organizadas?", "La abeja", "Cultura General"),
+    ("¿Cuál es el metal más abundante en la corteza terrestre?", "El aluminio", "Cultura General"),
+    ("¿Qué instrumento óptico se usa para observar los astros y planetas a distancia?", "El telescopio", "Cultura General"),
+    ("¿Cómo se llama un poliedro regular formado por seis caras cuadradas?", "El cubo", "Cultura General"),
 ]
 
-def poblar_100_preguntas():
+
+def poblar_300_preguntas():
     conn = sqlite3.connect("trivia.db")
     cursor = conn.cursor()
 
@@ -142,7 +343,7 @@ def poblar_100_preguntas():
         )
     """)
 
-    for consigna, resp, cat in PREGUNTAS_100:
+    for consigna, resp, cat in PREGUNTAS_300:
         cursor.execute("""INSERT INTO preguntas (consigna, respuesta_correcta, categoria, tipo)VALUES (?, ?, ?, 'abierta')
         """, (consigna, resp, cat))
 
@@ -154,4 +355,4 @@ def poblar_100_preguntas():
     print(f"Base de datos 'trivia.db' lista y limpia con {total} preguntas reales y variadas.")
 
 if __name__ == "__main__":
-    poblar_100_preguntas()
+    poblar_300_preguntas()
