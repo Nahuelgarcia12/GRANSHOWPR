@@ -11,7 +11,6 @@ const turnoBox = document.getElementById("turno-box");
 const txtTotalJugadores = document.getElementById("txt-total-jugadores");
 const tablaBody = document.getElementById("tabla-body");
 
-const btnIniciarTanda = document.getElementById("btn-iniciar-tanda");
 const btnLanzar = document.getElementById("btn-siguiente");
 const btnAbrirBuzzers = document.getElementById("btn-abrir-buzzers");
 const btnCorrecto = document.getElementById("btn-correcto");
@@ -34,7 +33,7 @@ function conectarHost() {
 
   socket.onopen = () => {
     socket.send(JSON.stringify({ action: "register", role: "host" }));
-    txtEstado.innerText = "ESTADO: CONECTADO AL SERVIDOR";
+    txtEstado.innerText = "ESTADO: CONECTADO - LISTO PARA JUGAR";
   };
 
   socket.onmessage = (event) => {
@@ -59,11 +58,6 @@ function procesarEventoHost(data) {
     case "sync_state":
       txtEstado.innerText = `ESTADO: ${data.state}`;
       actualizarRanking(data.leaderboard);
-      break;
-
-    case "tanda_ready":
-      txtEstado.innerText = `ESTADO: TANDA LISTA (${data.total_questions} PREGUNTAS)`;
-      btnLanzar.disabled = false;
       break;
 
    case "new_question":
@@ -132,7 +126,6 @@ function actualizarRanking(lista) {
 }
 
 // Mandos del Host
-btnIniciarTanda.onclick = () => socket.send(JSON.stringify({ action: "start_tanda" }));
 btnLanzar.onclick = () => socket.send(JSON.stringify({ action: "next_question" }));
 btnAbrirBuzzers.onclick = () => socket.send(JSON.stringify({ action: "open_buzzers" }));
 btnCorrecto.onclick = () => socket.send(JSON.stringify({ action: "answer_correct" }));
