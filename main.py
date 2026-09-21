@@ -2,12 +2,15 @@ import json
 import asyncio
 import random
 import time
+import io
 from typing import Dict, List, Optional
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse, RedirectResponse
 from pydantic import BaseModel
+import qrcode
 import uvicorn
 from database import init_db, get_random_questions, insert_question
 
@@ -28,7 +31,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Redirige la raíz directamente a la pantalla del jugador
+@app.get("/")
+def root():
+    return RedirectResponse(url="/static/player/")
+
+
+# Montaje de archivos estáticos con soporte directo para resolver index.html
+app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 
 
 # --- MODELOS PARA EL PANEL DE PREGUNTAS ---
@@ -177,6 +187,26 @@ def get_current_pin():
     return {"pin": manager.room_pin}
 
 
+@app.get("/api/qr")
+def generar_qr(request: Request):
+    """
+    Genera un QR que apunta a la pantalla del jugador, usando la misma
+    dirección (IP local o dominio) que el navegador usó para pedir esta
+    página. Así funciona automáticamente en cualquier red, sin tener que
+    configurar nada evento a evento.
+    """
+    host = request.headers.get("host")  # ej: "192.168.1.15:8000"
+    esquema = "https" if request.url.scheme == "https" else "http"
+    player_url = f"{esquema}://{host}/static/player/"
+
+    img = qrcode.make(player_url)
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    return StreamingResponse(buffer, media_type="image/png")
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
     await manager.connect(ws)
@@ -247,7 +277,6 @@ async def websocket_endpoint(ws: WebSocket):
             # 4. LANZAR PREGUNTA (abierta O multiple choice, según 'tipo')
             elif action == "next_question":
                 if not manager.questions_queue:
-                    # Se autocompleta sola: no hace falta ningún botón de "cargar tanda".
                     manager.questions_queue = get_random_questions(limit=30)
 
                 if manager.reading_task and not manager.reading_task.done():
@@ -269,7 +298,6 @@ async def websocket_endpoint(ws: WebSocket):
 
                     manager.state = "MC_OPEN"
 
-                    # La respuesta correcta sigue yendo SOLO al host, igual que en abiertas.
                     await manager.broadcast_split(
                         data_public={
                             "event": "new_question",
@@ -329,12 +357,12 @@ async def websocket_endpoint(ws: WebSocket):
                             "speaking_time": 10
                         })
 
-            # 6b. NUEVO: RESPUESTA DE MULTIPLE CHOICE (todos responden a la vez)
+            # 6b. RESPUESTA DE MULTIPLE CHOICE
             elif action == "submit_answer":
                 if manager.state == "MC_OPEN":
                     player = manager.players.get(ws)
                     if player and player["mc_answer"] is None:
-                        selected = data.get("selected")  # texto exacto de la opción elegida
+                        selected = data.get("selected")
                         player["mc_answer"] = selected
                         player["mc_answer_time"] = time.time()
 
@@ -347,7 +375,6 @@ async def websocket_endpoint(ws: WebSocket):
                             "total_jugadores": len(manager.players)
                         })
 
-                        # Si ya contestaron todos, cerramos antes de que se cumpla el tiempo.
                         if manager.players and respondieron == len(manager.players):
                             if manager.mc_deadline_task and not manager.mc_deadline_task.done():
                                 manager.mc_deadline_task.cancel()
