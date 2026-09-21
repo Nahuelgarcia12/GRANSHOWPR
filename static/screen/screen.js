@@ -18,6 +18,11 @@ const cartelTurno = document.getElementById("cartel-turno");
 const turnoNombre = document.getElementById("turno-nombre");
 const leaderboardPantalla = document.getElementById("leaderboard-pantalla");
 
+const opcionesPantalla = document.getElementById("opciones-pantalla");
+const opcionItems = Array.from(document.querySelectorAll(".opcion-pantalla-item"));
+
+const qrImg = document.getElementById("qr-img");
+
 const p1Nombre = document.getElementById("podio-p1-nombre");
 const p1Pts = document.getElementById("podio-p1-pts");
 const p2Nombre = document.getElementById("podio-p2-nombre");
@@ -25,26 +30,36 @@ const p2Pts = document.getElementById("podio-p2-pts");
 const p3Nombre = document.getElementById("podio-p3-nombre");
 const p3Pts = document.getElementById("podio-p3-pts");
 
-async function obtenerPin() {
-  try {
-    const res = await fetch("/api/pin?t=" + Date.now());
-    const data = await res.json();
-    if (data && data.pin) {
-      if (pinTxt) pinTxt.innerText = data.pin;
-      if (pinMiniTxt) pinMiniTxt.innerText = data.pin;
-    }
-  } catch (e) {}
+// La sala viene SIEMPRE en la URL de esta pantalla (ej: /static/screen/?room=4821),
+// ya no existe un "PIN activo" global porque puede haber varias salas a la vez.
+function obtenerRoomDeLaURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("room");
+}
+
+function mostrarErrorSinSala(mensaje) {
+  categoriaTag.innerText = "ERROR";
+  consignaPantalla.innerText = mensaje;
+  cambiarVista(vistaJuego);
 }
 
 function conectarPantalla() {
+  const roomPin = obtenerRoomDeLaURL();
+
+  if (!roomPin) {
+    mostrarErrorSinSala("Falta el código de sala en el link. Pedile al host que te comparta el link actualizado.");
+    return;
+  }
+
   const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+  const wsUrl = `${wsProtocol}//${window.location.host}/ws?room=${roomPin}`;
+
+  if (qrImg) qrImg.src = `/api/qr?room=${roomPin}`;
 
   socket = new WebSocket(wsUrl);
 
   socket.onopen = () => {
     socket.send(JSON.stringify({ action: "register", role: "screen" }));
-    obtenerPin();
   };
 
   socket.onmessage = (event) => {
@@ -66,9 +81,16 @@ function cambiarVista(vistaActiva) {
 
 function procesarEventoPantalla(data) {
   switch (data.event) {
+    case "auth_error":
+      mostrarErrorSinSala(data.message || "No se pudo conectar a la sala.");
+      break;
+
     case "sync_screen":
-    case "tanda_ready":
-      obtenerPin();
+      if (data.room_pin) {
+        pinTxt.innerText = data.room_pin;
+        pinMiniTxt.innerText = data.room_pin;
+      }
+      cambiarVista(vistaLobby);
       break;
 
     case "player_joined":
@@ -82,7 +104,14 @@ function procesarEventoPantalla(data) {
 
       categoriaTag.innerText = data.categoria.toUpperCase();
       consignaPantalla.innerText = data.consigna;
-      animarBarra(data.reading_time || 6);
+
+      if (data.tipo === "multiple") {
+        mostrarOpcionesPantalla(data.opciones || []);
+        animarBarra(data.time_limit || 15);
+      } else {
+        opcionesPantalla.classList.add("oculta");
+        animarBarra(data.reading_time || 6);
+      }
       break;
 
     case "buzzers_unlocked":
@@ -95,9 +124,6 @@ function procesarEventoPantalla(data) {
       cartelTurno.classList.remove("oculta");
       break;
 
-    // FIX: faltaba este caso. Sin él, cuando alguien pulsaba y fallaba,
-    // la pantalla grande seguía mostrando el nombre del jugador que ya
-    // perdió su turno, en vez de avisar que el rebote está abierto.
     case "rebote_active":
       turnoNombre.innerText = "¡REBOTE! ¿QUIÉN LA ROBA?";
       cartelTurno.classList.remove("oculta");
@@ -111,6 +137,12 @@ function procesarEventoPantalla(data) {
       } else {
         consignaPantalla.innerText = `Ronda finalizada. Era: ${data.respuesta_correcta}`;
       }
+      break;
+
+    case "mc_result":
+      detenerBarra();
+      revelarOpcionesPantalla(data.respuesta_correcta);
+      consignaPantalla.innerText = `La respuesta correcta era: ${data.respuesta_correcta}`;
       break;
 
     case "show_leaderboard":
@@ -165,6 +197,25 @@ function renderLeaderboardCompleto(leaderboard) {
       <span class="puntos">${p.score} pts</span>
     </li>
   `).join("");
+}
+
+function mostrarOpcionesPantalla(opciones) {
+  opcionesPantalla.classList.remove("oculta");
+  opcionItems.forEach((item, i) => {
+    item.classList.remove("correcta");
+    const texto = item.querySelector(".opcion-texto");
+    if (texto) texto.innerText = opciones[i] || "";
+  });
+}
+
+function revelarOpcionesPantalla(respuestaCorrecta) {
+  opcionItems.forEach((item) => {
+    const texto = item.querySelector(".opcion-texto");
+    const valor = texto ? texto.innerText : "";
+    if (valor === respuestaCorrecta) {
+      item.classList.add("correcta");
+    }
+  });
 }
 
 function animarBarra(segundos) {

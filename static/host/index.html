@@ -11,16 +11,30 @@
   <header class="host-header">
     <div>
       <h1>EL GRAN SHOW <span>• PANEL DE CONTROL</span></h1>
-      <p id="txt-estado" class="estado-tag">ESTADO: LOBBY</p>
+      <p id="txt-estado" class="estado-tag">ESTADO: CONECTANDO...</p>
     </div>
 
-      <div class="header-actions">
+    <div class="header-actions">
       <button id="btn-ver-ranking" class="btn btn-blue" style="background: #0284c7; color: white;">📊 TABLA DE POSICIONES</button>
-      <button id="btn-cambiar-pin" class="btn btn-danger">🔄 CAMBIAR SALA</button>
+      <button id="btn-cambiar-pin" class="btn btn-danger">🔄 CREAR SALA NUEVA</button>
       <button id="btn-finalizar-juego" class="btn btn-purple">🏆 PODIO FINAL</button>
     </div>
-
   </header>
+
+  <!-- Datos de la sala: PIN + link de pantalla -->
+  <div class="sala-info-bar">
+    <div class="sala-info-item">
+      <span class="sala-info-label">CÓDIGO DE SALA</span>
+      <strong id="txt-pin-sala">----</strong>
+    </div>
+    <div class="sala-info-item sala-info-link">
+      <span class="sala-info-label">LINK PARA LA PANTALLA GRANDE</span>
+      <div class="sala-link-row">
+        <input id="input-link-pantalla" type="text" readonly value="Esperando conexión...">
+        <button id="btn-copiar-link" class="btn btn-gold">📋 COPIAR</button>
+      </div>
+    </div>
+  </div>
 
   <main class="host-grid">
 
@@ -31,6 +45,13 @@
       <div class="pregunta-box">
         <span id="txt-categoria" class="badge-cat">CATEGORÍA</span>
         <p id="txt-consigna" class="consigna-txt">No hay ninguna pregunta activa. Tocá "Lanzar pregunta" para arrancar.</p>
+
+        <!-- Opciones visibles para el host si la pregunta es multiple choice -->
+        <div id="box-opciones-host" class="opciones-host-preview oculta" style="display: none; margin: 12px 0; gap: 8px; flex-direction: column;">
+          <small style="color: #94a3b8; font-weight: bold;">OPCIONES ENVIADAS A LOS CELULARES:</small>
+          <ul id="lista-opciones-host" style="list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: 4px;"></ul>
+        </div>
+
         <div class="solucion-box">
           <small>RESPUESTA CORRECTA:</small>
           <strong id="txt-solucion">---</strong>
@@ -48,7 +69,7 @@
       <!-- ZONA DE RESOLUCIÓN DEL TURNO -->
       <h2>RESOLUCIÓN DE RESPUESTA</h2>
       <div id="turno-box" class="turno-box espera">
-        <span class="label">QUIEN RESPONDE:</span>
+        <span class="label">ESTADO DE RESPUESTA:</span>
         <h3 id="txt-ganador">NADIE HA PULSADO</h3>
       </div>
 

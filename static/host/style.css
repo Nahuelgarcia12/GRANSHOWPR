@@ -15,7 +15,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid #1e294b;
 }
@@ -43,6 +43,65 @@ body {
 .header-actions {
   display: flex;
   gap: 12px;
+}
+
+/* BARRA DE INFO DE SALA (pin + link para la pantalla grande) */
+.sala-info-bar {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  background: #0e1528;
+  border: 1px solid #1e294b;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.sala-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sala-info-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+
+.sala-info-item strong {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #f5b300;
+  letter-spacing: 3px;
+}
+
+.sala-info-link {
+  flex: 1;
+  min-width: 280px;
+}
+
+.sala-link-row {
+  display: flex;
+  gap: 8px;
+}
+
+.sala-link-row input {
+  flex: 1;
+  background: #131b31;
+  border: 1px solid #27375e;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #cbd5e1;
+  font-size: 0.85rem;
+}
+
+.sala-link-row .btn {
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  flex: none;
 }
 
 .host-grid {

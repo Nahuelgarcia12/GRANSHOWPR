@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import StreamingResponse, RedirectResponse
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import qrcode
 import uvicorn
@@ -31,14 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Redirige la raíz directamente a la pantalla del jugador
-@app.get("/")
-def root():
-    return RedirectResponse(url="/static/player/")
-
-
-# Montaje de archivos estáticos con soporte directo para resolver index.html
-app.mount("/static", StaticFiles(directory="static", html=True), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 # --- MODELOS PARA EL PANEL DE PREGUNTAS ---
@@ -52,22 +45,22 @@ class PreguntaIn(BaseModel):
 
 @app.post("/api/preguntas")
 def api_nueva_pregunta(data: PreguntaIn):
+    # El banco de preguntas es compartido por todas las salas (no es por evento).
     nuevo_id = insert_question(
         data.consigna, data.respuesta_correcta, data.categoria, data.tipo, data.opciones
     )
     return {"status": "ok", "id": nuevo_id, "mensaje": "Pregunta guardada"}
 
 
-# --- GESTOR DE ESTADO DEL JUEGO Y WEBSOCKETS ---
+# --- UNA SALA = UNA PARTIDA/EVENTO, CON SU PROPIO ESTADO AISLADO ---
 class GameManager:
-    def __init__(self):
-        self.room_pin: str = self.generate_new_pin()
+    def __init__(self, room_pin: str):
+        self.room_pin: str = room_pin
         self.connections: List[WebSocket] = []
         self.players: Dict[WebSocket, dict] = {}
         self.host_socket: Optional[WebSocket] = None
         self.screen_socket: Optional[WebSocket] = None
 
-        # Qué módulo/juego está activo. Por ahora solo "trivia" (abiertas + multiple).
         self.modulo_actual: Optional[str] = "trivia"
 
         self.questions_queue: List[dict] = []
@@ -82,13 +75,7 @@ class GameManager:
         # Estado específico de preguntas MULTIPLE CHOICE
         self.mc_deadline_task: Optional[asyncio.Task] = None
         self.mc_time_limit: int = 15
-
-    def generate_new_pin(self) -> str:
-        return str(random.randint(1000, 9999))
-
-    async def connect(self, ws: WebSocket):
-        await ws.accept()
-        self.connections.append(ws)
+        self.mc_round_start: Optional[float] = None
 
     def disconnect(self, ws: WebSocket):
         if ws in self.connections:
@@ -101,7 +88,7 @@ class GameManager:
             self.screen_socket = None
 
     async def broadcast(self, data: dict):
-        """Manda el mismo mensaje a TODOS (host, screen, jugadores)."""
+        """Manda el mismo mensaje a TODOS los conectados de ESTA sala (host, screen, jugadores)."""
         msg = json.dumps(data)
         for ws in self.connections:
             try:
@@ -131,7 +118,7 @@ class GameManager:
         for p in self.players.values():
             p["blocked_this_round"] = False
             p["mc_answer"] = None
-            p["mc_answer_time"] = None
+            p["mc_elapsed"] = None
 
     # ---------- LÓGICA PREGUNTAS ABIERTAS (pulsador) ----------
     async def auto_open_buzzers(self, seconds: int = 6):
@@ -139,10 +126,7 @@ class GameManager:
             await asyncio.sleep(seconds)
             if self.state == "READING":
                 self.state = "BUZZER_OPEN"
-                await self.broadcast({
-                    "event": "buzzers_unlocked",
-                    "time_limit": 10
-                })
+                await self.broadcast({"event": "buzzers_unlocked", "time_limit": 10})
         except asyncio.CancelledError:
             pass
 
@@ -155,49 +139,83 @@ class GameManager:
         except asyncio.CancelledError:
             pass
 
+    def calcular_puntos_mc(self, elapsed: float) -> int:
+        """10 a 20 puntos según velocidad de respuesta. Mínimo garantizado: 10."""
+        if elapsed is None:
+            elapsed = self.mc_time_limit
+        fraccion_restante = max(0.0, 1 - (elapsed / self.mc_time_limit))
+        bonus_velocidad = round(10 * fraccion_restante)
+        return 10 + bonus_velocidad
+
     async def reveal_mc_results(self):
-        """Corta las respuestas, suma puntos y revela la correcta a todos."""
         if not self.current_question:
             return
 
         correcta = self.current_question["respuesta_correcta"]
         conteo_opciones: Dict[str, int] = {}
+        puntos_ronda: Dict[str, int] = {}
 
         for p in self.players.values():
             elegida = p.get("mc_answer")
             if elegida is not None:
                 conteo_opciones[elegida] = conteo_opciones.get(elegida, 0) + 1
                 if elegida == correcta:
-                    p["score"] += 10
+                    ganados = self.calcular_puntos_mc(p.get("mc_elapsed"))
+                    p["score"] += ganados
+                    puntos_ronda[p["name"]] = ganados
 
         self.state = "ROUND_OVER"
         await self.broadcast({
             "event": "mc_result",
             "respuesta_correcta": correcta,
             "conteo_opciones": conteo_opciones,
+            "puntos_ronda": puntos_ronda,
             "leaderboard": self.get_leaderboard()
         })
 
 
-manager = GameManager()
+# --- REGISTRO DE SALAS ACTIVAS (esto es lo que habilita multi-sala) ---
+class RoomRegistry:
+    def __init__(self):
+        self.rooms: Dict[str, GameManager] = {}
+
+    def generar_pin_unico(self) -> str:
+        while True:
+            pin = str(random.randint(1000, 9999))
+            if pin not in self.rooms:
+                return pin
+
+    def crear_sala(self) -> GameManager:
+        pin = self.generar_pin_unico()
+        sala = GameManager(pin)
+        self.rooms[pin] = sala
+        return sala
+
+    def obtener_sala(self, pin: str) -> Optional[GameManager]:
+        return self.rooms.get(pin)
+
+    def eliminar_sala_si_vacia(self, pin: str):
+        """Si una sala se queda sin nadie conectado (host, screen y jugadores),
+        la limpiamos para no acumular memoria con salas fantasma."""
+        sala = self.rooms.get(pin)
+        if sala and not sala.connections:
+            del self.rooms[pin]
 
 
-@app.get("/api/pin")
-def get_current_pin():
-    return {"pin": manager.room_pin}
+registry = RoomRegistry()
 
 
 @app.get("/api/qr")
-def generar_qr(request: Request):
+def generar_qr(request: Request, room: str):
     """
-    Genera un QR que apunta a la pantalla del jugador, usando la misma
+    Genera un QR que apunta directo a la sala indicada, usando la misma
     dirección (IP local o dominio) que el navegador usó para pedir esta
-    página. Así funciona automáticamente en cualquier red, sin tener que
-    configurar nada evento a evento.
+    página. El jugador que escanea entra directo a esa sala, sin tener
+    que tipear el PIN a mano.
     """
-    host = request.headers.get("host")  # ej: "192.168.1.15:8000"
+    host = request.headers.get("host")
     esquema = "https" if request.url.scheme == "https" else "http"
-    player_url = f"{esquema}://{host}/static/player/"
+    player_url = f"{esquema}://{host}/static/player/?room={room}"
 
     img = qrcode.make(player_url)
     buffer = io.BytesIO()
@@ -209,256 +227,303 @@ def generar_qr(request: Request):
 
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
-    await manager.connect(ws)
+    await ws.accept()
+
+    # Si la URL trae ?room=XXXX (por ejemplo, el host recargó la página, o la
+    # pantalla/jugador llegaron con un link que ya incluye la sala), lo usamos.
+    room_param = ws.query_params.get("room")
+    sala: Optional[GameManager] = None
+
     try:
         while True:
             text_data = await ws.receive_text()
             data = json.loads(text_data)
             action = data.get("action")
 
-            # 1. IDENTIFICACIÓN Y AUTENTICACIÓN
+            # 1. IDENTIFICACIÓN Y AUTENTICACIÓN (acá es donde se elige/crea la sala)
             if action == "register":
                 role = data.get("role")
 
-                if role == "player":
-                    pin_ingresado = str(data.get("pin", "")).strip()
+                if role == "host":
+                    # Si la URL ya traía una sala activa válida, reconectamos ahí
+                    # (por ejemplo, recargó la página sin querer). Si no, sala nueva.
+                    existente = registry.obtener_sala(room_param) if room_param else None
+                    sala = existente or registry.crear_sala()
 
-                    if pin_ingresado != manager.room_pin:
+                    sala.connections.append(ws)
+                    sala.host_socket = ws
+
+                    await ws.send_text(json.dumps({
+                        "event": "sync_state",
+                        "room_pin": sala.room_pin,
+                        "state": sala.state,
+                        "modulo_actual": sala.modulo_actual,
+                        "leaderboard": sala.get_leaderboard()
+                    }))
+
+                elif role == "screen":
+                    if not room_param:
                         await ws.send_text(json.dumps({
                             "event": "auth_error",
-                            "message": "Código incorrecto. El PIN actual es de 4 dígitos."
+                            "message": "Falta el código de sala en el link de la pantalla."
                         }))
                         continue
 
+                    sala = registry.obtener_sala(room_param)
+                    if not sala:
+                        await ws.send_text(json.dumps({
+                            "event": "auth_error",
+                            "message": "Esa sala ya no existe. Pedile al host el link actualizado."
+                        }))
+                        continue
+
+                    sala.connections.append(ws)
+                    sala.screen_socket = ws
+
+                    await ws.send_text(json.dumps({
+                        "event": "sync_screen",
+                        "room_pin": sala.room_pin,
+                        "state": sala.state,
+                        "modulo_actual": sala.modulo_actual,
+                        "leaderboard": sala.get_leaderboard()
+                    }))
+
+                elif role == "player":
+                    pin_ingresado = str(data.get("pin", "")).strip()
+                    encontrada = registry.obtener_sala(pin_ingresado)
+
+                    if not encontrada:
+                        await ws.send_text(json.dumps({
+                            "event": "auth_error",
+                            "message": "Código incorrecto o la sala ya no está activa."
+                        }))
+                        continue
+
+                    sala = encontrada
                     name = data.get("name", "Anónimo").strip()
-                    manager.players[ws] = {
+                    sala.connections.append(ws)
+                    sala.players[ws] = {
                         "name": name,
                         "score": 0,
                         "blocked_this_round": False,
                         "mc_answer": None,
-                        "mc_answer_time": None
+                        "mc_elapsed": None
                     }
                     await ws.send_text(json.dumps({"event": "auth_ok"}))
-                    await manager.broadcast({
+                    await sala.broadcast({
                         "event": "player_joined",
-                        "players": manager.get_leaderboard()
+                        "players": sala.get_leaderboard()
                     })
 
-                elif role == "screen":
-                    manager.screen_socket = ws
-                    await ws.send_text(json.dumps({
-                        "event": "sync_screen",
-                        "room_pin": manager.room_pin,
-                        "state": manager.state,
-                        "modulo_actual": manager.modulo_actual,
-                        "leaderboard": manager.get_leaderboard()
-                    }))
+                continue  # el resto de las acciones necesita ya tener `sala` asignada
 
-                elif role == "host":
-                    manager.host_socket = ws
-                    await ws.send_text(json.dumps({
-                        "event": "sync_state",
-                        "room_pin": manager.room_pin,
-                        "state": manager.state,
-                        "modulo_actual": manager.modulo_actual,
-                        "leaderboard": manager.get_leaderboard()
-                    }))
+            # A partir de acá, todas las acciones son sobre la sala ya identificada.
+            if sala is None:
+                continue
 
-            # 2. REINICIAR SALA (CAMBIO DE PIN)
-            elif action == "reset_room":
-                manager.room_pin = manager.generate_new_pin()
-                manager.players.clear()
-                manager.state = "LOBBY"
-                await manager.broadcast({
+            # 2. REINICIAR SALA (CAMBIO DE PIN): en multi-sala esto no tiene sentido
+            # tal como antes (¿"la" sala? ¿cuál?). Lo reemplazamos por "crear sala nueva"
+            # desde cero para este host, dejando la vieja disponible hasta que quede vacía.
+            if action == "reset_room":
+                vieja = sala
+                nueva = registry.crear_sala()
+                nueva.connections.append(ws)
+                nueva.host_socket = ws
+                if vieja.host_socket == ws:
+                    vieja.host_socket = None
+                if ws in vieja.connections:
+                    vieja.connections.remove(ws)
+                registry.eliminar_sala_si_vacia(vieja.room_pin)
+                sala = nueva
+                await ws.send_text(json.dumps({
                     "event": "room_reset",
-                    "new_pin": manager.room_pin
-                })
+                    "new_pin": sala.room_pin
+                }))
 
-            # 4. LANZAR PREGUNTA (abierta O multiple choice, según 'tipo')
+            # 3. LANZAR PREGUNTA (abierta O multiple choice, según 'tipo')
             elif action == "next_question":
-                if not manager.questions_queue:
-                    manager.questions_queue = get_random_questions(limit=30)
+                if not sala.questions_queue:
+                    sala.questions_queue = get_random_questions(limit=30)
 
-                if manager.reading_task and not manager.reading_task.done():
-                    manager.reading_task.cancel()
-                if manager.mc_deadline_task and not manager.mc_deadline_task.done():
-                    manager.mc_deadline_task.cancel()
+                if sala.reading_task and not sala.reading_task.done():
+                    sala.reading_task.cancel()
+                if sala.mc_deadline_task and not sala.mc_deadline_task.done():
+                    sala.mc_deadline_task.cancel()
 
-                manager.current_question = manager.questions_queue.pop(0)
-                manager.buzzer_winner = None
-                manager.rebote_disponible = True
-                manager.reset_player_round_state()
+                sala.current_question = sala.questions_queue.pop(0)
+                sala.buzzer_winner = None
+                sala.rebote_disponible = True
+                sala.reset_player_round_state()
 
-                tipo = manager.current_question.get("tipo", "abierta")
+                tipo = sala.current_question.get("tipo", "abierta")
 
                 if tipo == "multiple":
-                    opciones = manager.current_question.get("opciones") or []
+                    opciones = sala.current_question.get("opciones") or []
                     opciones_mezcladas = opciones.copy()
                     random.shuffle(opciones_mezcladas)
 
-                    manager.state = "MC_OPEN"
+                    sala.state = "MC_OPEN"
 
-                    await manager.broadcast_split(
+                    await sala.broadcast_split(
                         data_public={
                             "event": "new_question",
                             "tipo": "multiple",
-                            "categoria": manager.current_question["categoria"],
-                            "consigna": manager.current_question["consigna"],
+                            "categoria": sala.current_question["categoria"],
+                            "consigna": sala.current_question["consigna"],
                             "opciones": opciones_mezcladas,
-                            "time_limit": manager.mc_time_limit
+                            "time_limit": sala.mc_time_limit
                         },
                         data_host_extra={
-                            "respuesta_correcta": manager.current_question["respuesta_correcta"]
+                            "respuesta_correcta": sala.current_question["respuesta_correcta"]
                         }
                     )
 
-                    manager.mc_deadline_task = asyncio.create_task(
-                        manager.auto_reveal_mc(manager.mc_time_limit)
+                    sala.mc_round_start = time.time()
+                    sala.mc_deadline_task = asyncio.create_task(
+                        sala.auto_reveal_mc(sala.mc_time_limit)
                     )
 
                 else:
-                    manager.state = "READING"
-                    await manager.broadcast_split(
+                    sala.state = "READING"
+                    await sala.broadcast_split(
                         data_public={
                             "event": "new_question",
                             "tipo": "abierta",
-                            "categoria": manager.current_question["categoria"],
-                            "consigna": manager.current_question["consigna"],
+                            "categoria": sala.current_question["categoria"],
+                            "consigna": sala.current_question["consigna"],
                             "reading_time": 6
                         },
                         data_host_extra={
-                            "respuesta_correcta": manager.current_question["respuesta_correcta"]
+                            "respuesta_correcta": sala.current_question["respuesta_correcta"]
                         }
                     )
-                    manager.reading_task = asyncio.create_task(manager.auto_open_buzzers(6))
+                    sala.reading_task = asyncio.create_task(sala.auto_open_buzzers(6))
 
-            # 5. ABRIR PULSADORES ANTES DE TIEMPO (solo preguntas abiertas)
+            # 4. ABRIR PULSADORES ANTES DE TIEMPO (solo preguntas abiertas)
             elif action == "open_buzzers":
-                if manager.state == "READING":
-                    if manager.reading_task and not manager.reading_task.done():
-                        manager.reading_task.cancel()
-                    manager.state = "BUZZER_OPEN"
-                    await manager.broadcast({
-                        "event": "buzzers_unlocked",
-                        "time_limit": 10
-                    })
+                if sala.state == "READING":
+                    if sala.reading_task and not sala.reading_task.done():
+                        sala.reading_task.cancel()
+                    sala.state = "BUZZER_OPEN"
+                    await sala.broadcast({"event": "buzzers_unlocked", "time_limit": 10})
 
-            # 6. PULSADOR PRESIONADO (solo preguntas abiertas)
+            # 5. PULSADOR PRESIONADO (solo preguntas abiertas)
             elif action == "press_buzzer":
-                if manager.state == "BUZZER_OPEN":
-                    player = manager.players.get(ws)
+                if sala.state == "BUZZER_OPEN":
+                    player = sala.players.get(ws)
                     if player and not player["blocked_this_round"]:
-                        manager.state = "ANSWERING"
-                        manager.buzzer_winner = player["name"]
-
-                        await manager.broadcast({
+                        sala.state = "ANSWERING"
+                        sala.buzzer_winner = player["name"]
+                        await sala.broadcast({
                             "event": "buzzer_won",
                             "winner_name": player["name"],
                             "speaking_time": 10
                         })
 
-            # 6b. RESPUESTA DE MULTIPLE CHOICE
+            # 5b. RESPUESTA DE MULTIPLE CHOICE (todos responden a la vez)
             elif action == "submit_answer":
-                if manager.state == "MC_OPEN":
-                    player = manager.players.get(ws)
+                if sala.state == "MC_OPEN":
+                    player = sala.players.get(ws)
                     if player and player["mc_answer"] is None:
                         selected = data.get("selected")
                         player["mc_answer"] = selected
-                        player["mc_answer_time"] = time.time()
+                        player["mc_elapsed"] = time.time() - (sala.mc_round_start or time.time())
 
                         respondieron = sum(
-                            1 for p in manager.players.values() if p["mc_answer"] is not None
+                            1 for p in sala.players.values() if p["mc_answer"] is not None
                         )
-                        await manager.broadcast({
+                        await sala.broadcast({
                             "event": "mc_progress",
                             "respondieron": respondieron,
-                            "total_jugadores": len(manager.players)
+                            "total_jugadores": len(sala.players)
                         })
 
-                        if manager.players and respondieron == len(manager.players):
-                            if manager.mc_deadline_task and not manager.mc_deadline_task.done():
-                                manager.mc_deadline_task.cancel()
-                            await manager.reveal_mc_results()
+                        if sala.players and respondieron == len(sala.players):
+                            if sala.mc_deadline_task and not sala.mc_deadline_task.done():
+                                sala.mc_deadline_task.cancel()
+                            await sala.reveal_mc_results()
 
-            # 7. RESPUESTA CORRECTA (solo preguntas abiertas)
+            # 6. RESPUESTA CORRECTA (solo preguntas abiertas)
             elif action == "answer_correct":
-                if manager.state == "ANSWERING":
-                    for p in manager.players.values():
-                        if p["name"] == manager.buzzer_winner:
+                if sala.state == "ANSWERING":
+                    for p in sala.players.values():
+                        if p["name"] == sala.buzzer_winner:
                             p["score"] += 10
                             break
 
-                    manager.state = "ROUND_OVER"
-                    await manager.broadcast({
+                    sala.state = "ROUND_OVER"
+                    await sala.broadcast({
                         "event": "round_result",
                         "status": "correct",
-                        "winner_name": manager.buzzer_winner,
-                        "respuesta_correcta": manager.current_question["respuesta_correcta"],
-                        "leaderboard": manager.get_leaderboard()
+                        "winner_name": sala.buzzer_winner,
+                        "respuesta_correcta": sala.current_question["respuesta_correcta"],
+                        "leaderboard": sala.get_leaderboard()
                     })
 
-            # 8. RESPUESTA INCORRECTA (solo preguntas abiertas)
+            # 7. RESPUESTA INCORRECTA (solo preguntas abiertas)
             elif action == "answer_incorrect":
-                if manager.state == "ANSWERING":
-                    for p in manager.players.values():
-                        if p["name"] == manager.buzzer_winner:
+                if sala.state == "ANSWERING":
+                    for p in sala.players.values():
+                        if p["name"] == sala.buzzer_winner:
                             p["blocked_this_round"] = True
                             break
 
-                    if manager.rebote_disponible:
-                        manager.rebote_disponible = False
-                        manager.state = "BUZZER_OPEN"
-                        await manager.broadcast({
+                    if sala.rebote_disponible:
+                        sala.rebote_disponible = False
+                        sala.state = "BUZZER_OPEN"
+                        await sala.broadcast({
                             "event": "rebote_active",
-                            "excluded_player": manager.buzzer_winner,
+                            "excluded_player": sala.buzzer_winner,
                             "rebote_time": 7
                         })
                     else:
-                        manager.state = "ROUND_OVER"
-                        await manager.broadcast({
+                        sala.state = "ROUND_OVER"
+                        await sala.broadcast({
                             "event": "round_result",
                             "status": "null_round",
-                            "respuesta_correcta": manager.current_question["respuesta_correcta"],
-                            "leaderboard": manager.get_leaderboard()
+                            "respuesta_correcta": sala.current_question["respuesta_correcta"],
+                            "leaderboard": sala.get_leaderboard()
                         })
 
-            # 9. ANULAR RONDA
+            # 8. ANULAR RONDA
             elif action == "round_null":
-                if manager.reading_task and not manager.reading_task.done():
-                    manager.reading_task.cancel()
-                if manager.mc_deadline_task and not manager.mc_deadline_task.done():
-                    manager.mc_deadline_task.cancel()
-                manager.state = "ROUND_OVER"
-                await manager.broadcast({
+                if sala.reading_task and not sala.reading_task.done():
+                    sala.reading_task.cancel()
+                if sala.mc_deadline_task and not sala.mc_deadline_task.done():
+                    sala.mc_deadline_task.cancel()
+                sala.state = "ROUND_OVER"
+                await sala.broadcast({
                     "event": "round_result",
                     "status": "null_round",
-                    "respuesta_correcta": manager.current_question["respuesta_correcta"] if manager.current_question else "",
-                    "leaderboard": manager.get_leaderboard()
+                    "respuesta_correcta": sala.current_question["respuesta_correcta"] if sala.current_question else "",
+                    "leaderboard": sala.get_leaderboard()
                 })
 
-            # 10. MOSTRAR TABLA DE POSICIONES A DEMANDA
+            # 9. MOSTRAR TABLA DE POSICIONES A DEMANDA
             elif action == "show_leaderboard":
-                manager.state = "LEADERBOARD"
-                await manager.broadcast({
+                sala.state = "LEADERBOARD"
+                await sala.broadcast({
                     "event": "show_leaderboard",
-                    "leaderboard": manager.get_leaderboard()
+                    "leaderboard": sala.get_leaderboard()
                 })
 
-            # 11. PODIO FINAL
+            # 10. PODIO FINAL
             elif action == "finish_game":
-                manager.state = "PODIUM"
-                await manager.broadcast({
+                sala.state = "PODIUM"
+                await sala.broadcast({
                     "event": "game_over",
-                    "podium": manager.get_leaderboard()[:3],
-                    "full_ranking": manager.get_leaderboard()
+                    "podium": sala.get_leaderboard()[:3],
+                    "full_ranking": sala.get_leaderboard()
                 })
 
     except WebSocketDisconnect:
-        manager.disconnect(ws)
-        await manager.broadcast({
-            "event": "player_left",
-            "players": manager.get_leaderboard()
-        })
+        if sala:
+            sala.disconnect(ws)
+            await sala.broadcast({
+                "event": "player_left",
+                "players": sala.get_leaderboard()
+            })
+            registry.eliminar_sala_si_vacia(sala.room_pin)
 
 
 if __name__ == "__main__":

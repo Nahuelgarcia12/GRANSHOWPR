@@ -19,7 +19,7 @@
       <div class="tarjeta-acceso">
         <span class="sub-pin">CÓDIGO DE SALA</span>
         <h2 id="pin-txt">----</h2>
-        <img id="qr-img" class="qr-img" src="/api/qr" alt="Escaneá para unirte a la partida">
+        <img id="qr-img" class="qr-img" alt="Escaneá para unirte a la partida">
         <span class="sub-qr">ESCANEÁ PARA ENTRAR</span>
       </div>
 
@@ -45,6 +45,14 @@
 
       <div class="tiempo-container">
         <div id="barra-progreso" class="barra-fill"></div>
+      </div>
+
+      <!-- Grilla de opciones, solo visible en rondas de multiple choice -->
+      <div id="opciones-pantalla" class="opciones-pantalla oculta">
+        <div class="opcion-pantalla-item" data-index="0"><span class="opcion-letra">A</span><span class="opcion-texto"></span></div>
+        <div class="opcion-pantalla-item" data-index="1"><span class="opcion-letra">B</span><span class="opcion-texto"></span></div>
+        <div class="opcion-pantalla-item" data-index="2"><span class="opcion-letra">C</span><span class="opcion-texto"></span></div>
+        <div class="opcion-pantalla-item" data-index="3"><span class="opcion-letra">D</span><span class="opcion-texto"></span></div>
       </div>
 
       <div id="cartel-turno" class="cartel-turno oculta">

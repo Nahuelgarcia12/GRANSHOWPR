@@ -4,6 +4,10 @@ let roomPin = "";
 let currentScore = 0;
 let readingInterval = null;
 
+let preguntaActualTipo = "abierta"; // "abierta" | "multiple"
+let opcionSeleccionada = null;      // texto exacto de la opción que tocó el jugador
+let yaRespondioMC = false;
+
 const screenLogin = document.getElementById("pantalla-login");
 const screenGame = document.getElementById("pantalla-juego");
 const formLogin = document.getElementById("form-login");
@@ -16,7 +20,12 @@ const txtScore = document.getElementById("player-score");
 const badgeCat = document.getElementById("badge-categoria");
 const readingMsg = document.getElementById("reading-msg");
 const readingBar = document.getElementById("reading-bar");
+
+const buzzerWrapper = document.getElementById("buzzer-wrapper");
 const buzzerBtn = document.getElementById("buzzer-btn");
+
+const opcionesWrapper = document.getElementById("opciones-wrapper");
+const opcionBtns = Array.from(document.querySelectorAll(".opcion-btn"));
 
 const boxPregunta = document.getElementById("pregunta-player-box");
 const playerQuestionTxt = document.getElementById("player-question-txt");
@@ -28,23 +37,26 @@ const fbSub = document.getElementById("feedback-sub");
 
 const displayRoomPin = document.getElementById("display-room-pin");
 
-// 1. CARGA INMEDIATA DEL PIN AL ABRIR LA PÁGINA
-async function obtenerPinActivo() {
-  try {
-    const res = await fetch("/api/pin?t=" + Date.now());
-    const data = await res.json();
-    if (data && data.pin) {
-      if (displayRoomPin) displayRoomPin.innerText = data.pin;
-      if (inputPin) inputPin.value = data.pin;
-      if (inputNombre) inputNombre.focus();
-    }
-  } catch (err) {
+// 1. SI VINO POR QR, LA URL YA TRAE ?room=XXXX: lo autocompletamos.
+// Si no, el jugador escribe el PIN a mano (se lo pasó el animador de palabra).
+function obtenerRoomDeLaURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("room");
+}
+
+function precargarRoomDesdeURL() {
+  const roomDeQR = obtenerRoomDeLaURL();
+  if (roomDeQR) {
+    if (displayRoomPin) displayRoomPin.innerText = roomDeQR;
+    if (inputPin) inputPin.value = roomDeQR;
+  } else {
     if (displayRoomPin) displayRoomPin.innerText = "----";
   }
+  if (inputNombre) inputNombre.focus();
 }
 
 // Ejecutar inmediatamente
-obtenerPinActivo();
+precargarRoomDesdeURL();
 
 // 2. INGRESO A LA SALA
 formLogin.addEventListener("submit", (e) => {
@@ -107,11 +119,30 @@ function iniciarConexion() {
   };
 }
 
-// 3. ACCIÓN DEL PULSADOR
+// 3. ACCIÓN DEL PULSADOR (preguntas abiertas)
 buzzerBtn.addEventListener("pointerdown", () => {
   if (buzzerBtn.disabled) return;
   socket.send(JSON.stringify({ action: "press_buzzer" }));
   if (navigator.vibrate) navigator.vibrate(80);
+});
+
+// 3b. ACCIÓN DE TOCAR UNA OPCIÓN (multiple choice)
+opcionBtns.forEach((btn) => {
+  btn.addEventListener("pointerdown", () => {
+    if (yaRespondioMC || btn.disabled) return;
+
+    opcionSeleccionada = btn.innerText;
+    yaRespondioMC = true;
+
+    opcionBtns.forEach((b) => {
+      b.disabled = true;
+      b.classList.remove("seleccionada");
+    });
+    btn.classList.add("seleccionada");
+
+    socket.send(JSON.stringify({ action: "submit_answer", selected: opcionSeleccionada }));
+    if (navigator.vibrate) navigator.vibrate(60);
+  });
 });
 
 // 4. EVENTOS EN VIVO
@@ -119,16 +150,21 @@ function procesarEvento(data) {
   switch (data.event) {
 
     case "new_question":
+      preguntaActualTipo = data.tipo || "abierta";
       badgeCat.innerText = data.categoria.toUpperCase();
       playerQuestionTxt.innerText = data.consigna;
       boxPregunta.classList.remove("oculta");
       fbCard.classList.add("oculta");
-      bloquearBuzzer();
-      animarBarraLectura(data.reading_time || 6);
+
+      if (preguntaActualTipo === "multiple") {
+        mostrarModoMultiple(data.opciones || [], data.time_limit || 15);
+      } else {
+        mostrarModoAbierta(data.reading_time || 6);
+      }
       break;
 
     case "buzzers_unlocked":
-      detenerBarraLectura();
+      detenerBarra();
       desbloquearBuzzer();
       fbCard.classList.add("oculta");
       break;
@@ -155,19 +191,32 @@ function procesarEvento(data) {
 
     case "round_result":
       bloquearBuzzer();
-      boxPregunta.classList.add("oculta");
-      badgeCat.innerText = "SALA CONECTADA";
+      cerrarRonda();
 
-      if (data.leaderboard) {
-        const yo = data.leaderboard.find(p => p.name === playerName);
-        if (yo) {
-          currentScore = yo.score;
-          txtScore.innerText = `⭐ ${currentScore} pts`;
-        }
-      }
+      if (data.leaderboard) actualizarScorePropio(data.leaderboard);
 
       fbCard.classList.add("oculta");
       readingMsg.innerText = "Esperando la próxima pregunta...";
+      break;
+
+    // NUEVO: resultado de una ronda de multiple choice
+    case "mc_result":
+      detenerBarra();
+      revelarResultadoMC(data.respuesta_correcta);
+      cerrarRonda();
+
+      if (data.leaderboard) actualizarScorePropio(data.leaderboard);
+
+      const puntosGanados = (data.puntos_ronda && data.puntos_ronda[playerName]) || 0;
+
+      if (opcionSeleccionada === null) {
+        setFeedback("perdiste", "⌛", "NO RESPONDISTE", `La correcta era: ${data.respuesta_correcta}`);
+      } else if (opcionSeleccionada === data.respuesta_correcta) {
+        if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+        setFeedback("ganaste", "✅", `¡CORRECTO! +${puntosGanados} pts`, "Cuanto más rápido respondés, más puntos ganás.");
+      } else {
+        setFeedback("perdiste", "❌", "RESPUESTA INCORRECTA", `La correcta era: ${data.respuesta_correcta}`);
+      }
       break;
 
     case "game_over":
@@ -191,10 +240,59 @@ function procesarEvento(data) {
   }
 }
 
-// 5. HELPERS
-function animarBarraLectura(segundos) {
+// 5. HELPERS — MODO ABIERTA (pulsador)
+function mostrarModoAbierta(segundos) {
+  opcionesWrapper.classList.add("oculta");
+  buzzerWrapper.classList.remove("oculta");
+  bloquearBuzzer();
+  animarBarra(segundos, "Leyendo consigna...", "¡Pulsadores abiertos!");
+}
+
+// 6. HELPERS — MODO MULTIPLE CHOICE
+function mostrarModoMultiple(opciones, segundos) {
+  buzzerWrapper.classList.add("oculta");
+  opcionesWrapper.classList.remove("oculta");
+
+  opcionSeleccionada = null;
+  yaRespondioMC = false;
+
+  opcionBtns.forEach((btn, i) => {
+    btn.innerText = opciones[i] || "";
+    btn.disabled = false;
+    btn.classList.remove("seleccionada", "correcta", "incorrecta");
+  });
+
+  animarBarra(segundos, "Elegí tu respuesta...", "¡Tiempo agotado!");
+}
+
+function revelarResultadoMC(respuestaCorrecta) {
+  opcionBtns.forEach((btn) => {
+    btn.disabled = true;
+    if (btn.innerText === respuestaCorrecta) {
+      btn.classList.add("correcta");
+    } else if (btn.classList.contains("seleccionada")) {
+      btn.classList.add("incorrecta");
+    }
+  });
+}
+
+// 7. HELPERS COMPARTIDOS
+function cerrarRonda() {
+  boxPregunta.classList.add("oculta");
+  badgeCat.innerText = "SALA CONECTADA";
+}
+
+function actualizarScorePropio(leaderboard) {
+  const yo = leaderboard.find(p => p.name === playerName);
+  if (yo) {
+    currentScore = yo.score;
+    txtScore.innerText = `⭐ ${currentScore} pts`;
+  }
+}
+
+function animarBarra(segundos, mensajeInicial, mensajeFinal) {
   clearInterval(readingInterval);
-  readingMsg.innerText = "Leyendo consigna...";
+  readingMsg.innerText = mensajeInicial;
   let restante = segundos * 10;
   const total = restante;
 
@@ -207,15 +305,14 @@ function animarBarraLectura(segundos) {
 
     if (restante <= 0) {
       clearInterval(readingInterval);
-      readingMsg.innerText = "¡Pulsadores abiertos!";
+      readingMsg.innerText = mensajeFinal;
     }
   }, 100);
 }
 
-function detenerBarraLectura() {
+function detenerBarra() {
   clearInterval(readingInterval);
   readingBar.style.width = "0%";
-  readingMsg.innerText = "¡Pulsadores abiertos!";
 }
 
 function desbloquearBuzzer() {
