@@ -19,15 +19,15 @@ html, body {
   display: none !important;
 }
 
-/* PANTALLA COMPLETA CON EL FONDO DEL ESTUDIO */
+/* PANTALLA COMPLETA CON FONDO ESTILO ESTUDIO */
 .pantalla-completa {
   width: 100vw;
   height: 100vh;
-  padding: 30px 40px;
+  padding: 24px 40px;
   display: flex;
   flex-direction: column;
   background-image:
-    linear-gradient(rgba(10, 6, 28, 0.45), rgba(10, 6, 28, 0.65)),
+    linear-gradient(rgba(10, 6, 28, 0.5), rgba(10, 6, 28, 0.7)),
     url('/static/screen/background.jpeg');
   background-size: cover;
   background-position: center bottom;
@@ -67,7 +67,7 @@ html, body {
   background: rgba(30, 24, 66, 0.9);
   border: 3px solid #ffcc00;
   border-radius: 24px;
-  padding: 40px 20px;
+  padding: 36px 20px;
   text-align: center;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 204, 0, 0.25);
   display: flex;
@@ -87,16 +87,15 @@ html, body {
   font-weight: 900;
   color: #ffcc00;
   letter-spacing: 8px;
-  margin-top: 10px;
+  margin-top: 8px;
   text-shadow: 0 0 25px rgba(255, 204, 0, 0.6);
 }
 
-/* QR de acceso rápido, debajo del PIN dentro de la misma tarjeta */
 .qr-img {
-  width: 180px;
-  height: 180px;
-  margin-top: 22px;
-  padding: 10px;
+  width: 175px;
+  height: 175px;
+  margin-top: 18px;
+  padding: 8px;
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.25);
@@ -145,7 +144,7 @@ html, body {
   font-size: 1.1rem;
 }
 
-/* 2. JUEGO LIMPIO */
+/* 2. JUEGO EN VIVO */
 .juego-header {
   display: flex;
   justify-content: space-between;
@@ -153,7 +152,7 @@ html, body {
 }
 
 .logo-mini {
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   font-weight: 900;
   color: #ffcc00;
 }
@@ -165,10 +164,18 @@ html, body {
   border-radius: 30px;
   font-size: 1.1rem;
   font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.pin-mini {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #94a3b8;
 }
 
 .pin-mini strong {
   color: #ffcc00;
+  font-size: 1.3rem;
 }
 
 .juego-centro {
@@ -177,7 +184,10 @@ html, body {
   justify-content: center;
   align-items: center;
   flex: 1;
-  gap: 30px;
+  gap: 24px;
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
 }
 
 .consigna-container {
@@ -185,8 +195,8 @@ html, body {
   border: 3px solid #ffcc00;
   box-shadow: 0 0 35px rgba(255, 204, 0, 0.35);
   border-radius: 24px;
-  padding: 40px;
-  max-width: 950px;
+  padding: 28px 40px;
+  width: 100%;
   text-align: center;
 }
 
@@ -198,8 +208,8 @@ html, body {
 }
 
 .tiempo-container {
-  width: 950px;
-  height: 20px;
+  width: 100%;
+  height: 16px;
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(56, 189, 248, 0.4);
   border-radius: 12px;
@@ -210,8 +220,80 @@ html, body {
   width: 0%;
   height: 100%;
   background: linear-gradient(90deg, #f59e0b, #ffcc00);
+  box-shadow: 0 0 12px #ffcc00;
 }
 
+/* GRILLA 2x2 DE MULTIPLE CHOICE EN PANTALLA GIGANTE */
+.opciones-pantalla {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+}
+
+.opcion-pantalla-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: rgba(20, 16, 46, 0.92);
+  border: 3px solid rgba(139, 92, 246, 0.4);
+  border-radius: 20px;
+  padding: 18px 24px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+  transition: all 0.25s ease;
+}
+
+.opcion-pantalla-item .opcion-letra {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  border-radius: 12px;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.opcion-pantalla-item .opcion-texto {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+/* Colores por opción (A, B, C, D) */
+.opcion-pantalla-item[data-index="0"] { border-color: #ef4444; }
+.opcion-pantalla-item[data-index="0"] .opcion-letra { background: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+
+.opcion-pantalla-item[data-index="1"] { border-color: #0284c7; }
+.opcion-pantalla-item[data-index="1"] .opcion-letra { background: #0284c7; box-shadow: 0 0 15px rgba(2, 132, 199, 0.6); }
+
+.opcion-pantalla-item[data-index="2"] { border-color: #f59e0b; }
+.opcion-pantalla-item[data-index="2"] .opcion-letra { background: #f59e0b; box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); }
+
+.opcion-pantalla-item[data-index="3"] { border-color: #10b981; }
+.opcion-pantalla-item[data-index="3"] .opcion-letra { background: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.6); }
+
+/* Estados al revelar la respuesta */
+.opcion-pantalla-item.correcta {
+  background: rgba(6, 78, 59, 0.95) !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 0 45px rgba(52, 211, 153, 0.85) !important;
+  transform: scale(1.03);
+}
+
+.opcion-pantalla-item.correcta .opcion-letra {
+  background: #10b981 !important;
+}
+
+.opcion-pantalla-item.opaca {
+  opacity: 0.35;
+  filter: grayscale(0.5);
+}
+
+/* CARTEL DE TURNO EN PREGUNTA ABIERTA */
 .cartel-turno {
   background: #042721;
   border: 3px solid #10b981;
@@ -233,7 +315,7 @@ html, body {
   color: #ffffff;
 }
 
-/* 3. TABLA DE POSICIONES DEDICADA */
+/* 3. TABLA DE POSICIONES */
 #vista-ranking {
   padding-top: 25px !important;
   justify-content: flex-start;
@@ -284,20 +366,8 @@ html, body {
   transform: scale(1.02);
 }
 
-.ranking-item.top-2 {
-  border-color: #cbd5e1;
-}
-
-.ranking-item.top-3 {
-  border-color: #d97706;
-}
-
-.ranking-item .nombre-tag {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  letter-spacing: 1px;
-}
+.ranking-item.top-2 { border-color: #cbd5e1; }
+.ranking-item.top-3 { border-color: #d97706; }
 
 .ranking-item .puntos {
   color: #38bdf8;

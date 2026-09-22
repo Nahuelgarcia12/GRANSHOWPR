@@ -4,8 +4,8 @@ let roomPin = "";
 let currentScore = 0;
 let readingInterval = null;
 
-let preguntaActualTipo = "abierta"; // "abierta" | "multiple"
-let opcionSeleccionada = null;      // texto exacto de la opción que tocó el jugador
+let preguntaActualTipo = "abierta";
+let opcionSeleccionada = null;
 let yaRespondioMC = false;
 
 const screenLogin = document.getElementById("pantalla-login");
@@ -37,28 +37,40 @@ const fbSub = document.getElementById("feedback-sub");
 
 const displayRoomPin = document.getElementById("display-room-pin");
 
-// 1. SI VINO POR QR, LA URL YA TRAE ?room=XXXX: lo autocompletamos.
-// Si no, el jugador escribe el PIN a mano (se lo pasó el animador de palabra).
 function obtenerRoomDeLaURL() {
   const params = new URLSearchParams(window.location.search);
   return params.get("room");
 }
 
-function precargarRoomDesdeURL() {
-  const roomDeQR = obtenerRoomDeLaURL();
-  if (roomDeQR) {
-    if (displayRoomPin) displayRoomPin.innerText = roomDeQR;
-    if (inputPin) inputPin.value = roomDeQR;
+async function precargarRoomDesdeURL() {
+  let room = obtenerRoomDeLaURL();
+
+  if (!room) {
+    try {
+      const resp = await fetch("/api/sala-activa");
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.room_pin) {
+          room = data.room_pin;
+        }
+      }
+    } catch (e) {
+      console.warn("No se pudo autodetectar la sala activa:", e);
+    }
+  }
+
+  if (room) {
+    if (displayRoomPin) displayRoomPin.innerText = room;
+    if (inputPin) inputPin.value = room;
   } else {
     if (displayRoomPin) displayRoomPin.innerText = "----";
   }
+
   if (inputNombre) inputNombre.focus();
 }
 
-// Ejecutar inmediatamente
 precargarRoomDesdeURL();
 
-// 2. INGRESO A LA SALA
 formLogin.addEventListener("submit", (e) => {
   e.preventDefault();
   playerName = inputNombre.value.trim();
@@ -119,19 +131,20 @@ function iniciarConexion() {
   };
 }
 
-// 3. ACCIÓN DEL PULSADOR (preguntas abiertas)
+// Acción del pulsador (preguntas abiertas)
 buzzerBtn.addEventListener("pointerdown", () => {
   if (buzzerBtn.disabled) return;
   socket.send(JSON.stringify({ action: "press_buzzer" }));
   if (navigator.vibrate) navigator.vibrate(80);
 });
 
-// 3b. ACCIÓN DE TOCAR UNA OPCIÓN (multiple choice)
+// Acción de votar una opción en el celular (multiple choice)
 opcionBtns.forEach((btn) => {
   btn.addEventListener("pointerdown", () => {
     if (yaRespondioMC || btn.disabled) return;
 
-    opcionSeleccionada = btn.innerText;
+    const textoSpan = btn.querySelector(".opcion-texto");
+    opcionSeleccionada = textoSpan ? textoSpan.innerText.trim() : btn.innerText.trim();
     yaRespondioMC = true;
 
     opcionBtns.forEach((b) => {
@@ -142,10 +155,11 @@ opcionBtns.forEach((btn) => {
 
     socket.send(JSON.stringify({ action: "submit_answer", selected: opcionSeleccionada }));
     if (navigator.vibrate) navigator.vibrate(60);
+
+    setFeedback("ganaste", "🗳️", "¡VOTO REGISTRADO!", "Esperando que termine el tiempo...");
   });
 });
 
-// 4. EVENTOS EN VIVO
 function procesarEvento(data) {
   switch (data.event) {
 
@@ -199,7 +213,6 @@ function procesarEvento(data) {
       readingMsg.innerText = "Esperando la próxima pregunta...";
       break;
 
-    // NUEVO: resultado de una ronda de multiple choice
     case "mc_result":
       detenerBarra();
       revelarResultadoMC(data.respuesta_correcta);
@@ -210,10 +223,10 @@ function procesarEvento(data) {
       const puntosGanados = (data.puntos_ronda && data.puntos_ronda[playerName]) || 0;
 
       if (opcionSeleccionada === null) {
-        setFeedback("perdiste", "⌛", "NO RESPONDISTE", `La correcta era: ${data.respuesta_correcta}`);
+        setFeedback("perdiste", "⌛", "NO RESPONDIÓ", `La correcta era: ${data.respuesta_correcta}`);
       } else if (opcionSeleccionada === data.respuesta_correcta) {
         if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-        setFeedback("ganaste", "✅", `¡CORRECTO! +${puntosGanados} pts`, "Cuanto más rápido respondés, más puntos ganás.");
+        setFeedback("ganaste", "✅", `¡CORRECTO! +${puntosGanados} pts`, "Puntos sumados a tu marcador.");
       } else {
         setFeedback("perdiste", "❌", "RESPUESTA INCORRECTA", `La correcta era: ${data.respuesta_correcta}`);
       }
@@ -240,35 +253,37 @@ function procesarEvento(data) {
   }
 }
 
-// 5. HELPERS — MODO ABIERTA (pulsador)
 function mostrarModoAbierta(segundos) {
-  opcionesWrapper.classList.add("oculta");
-  buzzerWrapper.classList.remove("oculta");
+  if (opcionesWrapper) opcionesWrapper.classList.add("oculta");
+  if (buzzerWrapper) buzzerWrapper.classList.remove("oculta");
   bloquearBuzzer();
   animarBarra(segundos, "Leyendo consigna...", "¡Pulsadores abiertos!");
 }
 
-// 6. HELPERS — MODO MULTIPLE CHOICE
 function mostrarModoMultiple(opciones, segundos) {
-  buzzerWrapper.classList.add("oculta");
-  opcionesWrapper.classList.remove("oculta");
+  if (buzzerWrapper) buzzerWrapper.classList.add("oculta");
+  if (opcionesWrapper) opcionesWrapper.classList.remove("oculta");
 
   opcionSeleccionada = null;
   yaRespondioMC = false;
 
   opcionBtns.forEach((btn, i) => {
-    btn.innerText = opciones[i] || "";
+    const txtSpan = btn.querySelector(".opcion-texto");
+    if (txtSpan) txtSpan.innerText = opciones[i] || "";
     btn.disabled = false;
     btn.classList.remove("seleccionada", "correcta", "incorrecta");
   });
 
-  animarBarra(segundos, "Elegí tu respuesta...", "¡Tiempo agotado!");
+  animarBarra(segundos, "¡Elegí tu respuesta!", "¡Tiempo agotado!");
 }
 
 function revelarResultadoMC(respuestaCorrecta) {
   opcionBtns.forEach((btn) => {
     btn.disabled = true;
-    if (btn.innerText === respuestaCorrecta) {
+    const txtSpan = btn.querySelector(".opcion-texto");
+    const valor = txtSpan ? txtSpan.innerText.trim() : btn.innerText.trim();
+
+    if (valor === respuestaCorrecta.trim()) {
       btn.classList.add("correcta");
     } else if (btn.classList.contains("seleccionada")) {
       btn.classList.add("incorrecta");
@@ -276,7 +291,6 @@ function revelarResultadoMC(respuestaCorrecta) {
   });
 }
 
-// 7. HELPERS COMPARTIDOS
 function cerrarRonda() {
   boxPregunta.classList.add("oculta");
   badgeCat.innerText = "SALA CONECTADA";

@@ -44,12 +44,12 @@
 
       <div class="pregunta-box">
         <span id="txt-categoria" class="badge-cat">CATEGORÍA</span>
-        <p id="txt-consigna" class="consigna-txt">No hay ninguna pregunta activa. Tocá "Lanzar pregunta" para arrancar.</p>
+        <p id="txt-consigna" class="consigna-txt">No hay ninguna pregunta activa. Seleccioná una modalidad para arrancar.</p>
 
         <!-- Opciones visibles para el host si la pregunta es multiple choice -->
         <div id="box-opciones-host" class="opciones-host-preview oculta" style="display: none; margin: 12px 0; gap: 8px; flex-direction: column;">
           <small style="color: #94a3b8; font-weight: bold;">OPCIONES ENVIADAS A LOS CELULARES:</small>
-          <ul id="lista-opciones-host" style="list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: 4px;"></ul>
+          <ul id="lista-opciones-host" style="list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: 6px;"></ul>
         </div>
 
         <div class="solucion-box">
@@ -58,10 +58,11 @@
         </div>
       </div>
 
-      <!-- BOTONES DE FLUJO DE JUEGO -->
-      <div class="acciones-ronda">
-        <button id="btn-siguiente" class="btn btn-primary">⏭ LANZAR PREGUNTA</button>
-        <button id="btn-abrir-buzzers" class="btn btn-warning">⚡ ABRIR PULSADORES YA</button>
+      <!-- BOTONES DE FLUJO DE JUEGO (LANZAMIENTO DIFERENCIADO) -->
+      <div class="acciones-ronda" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button id="btn-siguiente" class="btn btn-primary" style="flex: 1;">🎤 PREGUNTA ABIERTA</button>
+        <button id="btn-siguiente-mc" class="btn" style="flex: 1; background: #8b5cf6; color: white;">🔘 MULTIPLE CHOICE</button>
+        <button id="btn-abrir-buzzers" class="btn btn-warning" style="width: 100%;">⚡ ABRIR PULSADORES YA</button>
       </div>
 
       <hr class="divider">
@@ -74,7 +75,7 @@
       </div>
 
       <div class="acciones-resolucion">
-        <button id="btn-correcto" class="btn btn-success" disabled>✔ CORRECTO (+10)</button>
+        <button id="btn-correcto" class="btn btn-success" disabled>✔ CORRECTO (+1000)</button>
         <button id="btn-incorrecto" class="btn btn-danger" disabled>✖ REBOTE / ERROR</button>
         <button id="btn-anular" class="btn btn-gray">⛔ ANULAR RONDA</button>
       </div>

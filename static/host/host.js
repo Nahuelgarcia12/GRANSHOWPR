@@ -12,11 +12,15 @@ const turnoBox = document.getElementById("turno-box");
 const txtTotalJugadores = document.getElementById("txt-total-jugadores");
 const tablaBody = document.getElementById("tabla-body");
 
+const boxOpcionesHost = document.getElementById("box-opciones-host");
+const listaOpcionesHost = document.getElementById("lista-opciones-host");
+
 const txtPinSala = document.getElementById("txt-pin-sala");
 const inputLinkPantalla = document.getElementById("input-link-pantalla");
 const btnCopiarLink = document.getElementById("btn-copiar-link");
 
 const btnLanzar = document.getElementById("btn-siguiente");
+const btnLanzarMC = document.getElementById("btn-siguiente-mc");
 const btnAbrirBuzzers = document.getElementById("btn-abrir-buzzers");
 const btnCorrecto = document.getElementById("btn-correcto");
 const btnIncorrecto = document.getElementById("btn-incorrecto");
@@ -34,19 +38,14 @@ btnCopiarLink.onclick = () => {
   navigator.clipboard.writeText(inputLinkPantalla.value).then(() => {
     btnCopiarLink.innerText = "✅ COPIADO";
     setTimeout(() => { btnCopiarLink.innerText = "📋 COPIAR"; }, 1500);
-  }).catch(() => {
-    // Si el navegador bloquea el clipboard (ej. sin HTTPS), al menos queda seleccionado.
-  });
+  }).catch(() => {});
 };
 
-// Si el panel se recarga con ?room=XXXX en su propia URL, reconectamos a esa
-// misma sala en vez de crear una nueva sin querer.
 function obtenerRoomDeLaURL() {
   const params = new URLSearchParams(window.location.search);
   return params.get("room");
 }
 
-// Conectar con el WebSocket del backend
 function conectarHost() {
   const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const roomExistente = obtenerRoomDeLaURL();
@@ -75,16 +74,13 @@ function actualizarInfoSala(pin) {
   miSalaPin = pin;
   txtPinSala.innerText = pin;
 
-  // Dejamos la sala guardada en la propia URL del host, para poder
-  // recargar la página sin perder la partida en curso.
   const nuevaUrl = `${window.location.pathname}?room=${pin}`;
   window.history.replaceState({}, "", nuevaUrl);
 
-  const linkPantalla = `${window.location.origin}/static/screen/?room=${pin}`;
+  const linkPantalla = `${window.location.origin}/static/screen/index.html?room=${pin}`;
   inputLinkPantalla.value = linkPantalla;
 }
 
-// Escuchador de eventos del servidor
 function procesarEventoHost(data) {
   switch (data.event) {
     case "sync_state":
@@ -115,6 +111,17 @@ function procesarEventoHost(data) {
         btnAbrirBuzzers.disabled = true;
         btnCorrecto.disabled = true;
         btnIncorrecto.disabled = true;
+
+        if (boxOpcionesHost && data.opciones) {
+          boxOpcionesHost.style.display = "flex";
+          listaOpcionesHost.innerHTML = data.opciones.map((opc, idx) => {
+            const letras = ["A", "B", "C", "D"];
+            const esCorrecta = (opc === data.respuesta_correcta);
+            return `<li style="padding: 6px 10px; border-radius: 6px; background: ${esCorrecta ? '#064e3b' : '#1e294b'}; color: ${esCorrecta ? '#34d399' : '#fff'}; border: 1px solid ${esCorrecta ? '#10b981' : '#334155'}; font-size: 0.9rem;">
+              <strong>${letras[idx]}:</strong> ${opc} ${esCorrecta ? '✔' : ''}
+            </li>`;
+          }).join("");
+        }
       } else {
         txtEstado.innerText = "ESTADO: LEYENDO CONSIGNAS (AUTO-ACTIVACIÓN EN 6s)";
         turnoBox.className = "turno-box espera";
@@ -122,6 +129,8 @@ function procesarEventoHost(data) {
         btnAbrirBuzzers.disabled = false;
         btnCorrecto.disabled = true;
         btnIncorrecto.disabled = true;
+
+        if (boxOpcionesHost) boxOpcionesHost.style.display = "none";
       }
       break;
 
@@ -191,8 +200,11 @@ function actualizarRanking(lista) {
   `).join("");
 }
 
-// Mandos del Host
-btnLanzar.onclick = () => socket.send(JSON.stringify({ action: "next_question" }));
+// Mandos del Host con selección de modalidad
+btnLanzar.onclick = () => socket.send(JSON.stringify({ action: "next_question", tipo: "abierta" }));
+if (btnLanzarMC) {
+  btnLanzarMC.onclick = () => socket.send(JSON.stringify({ action: "next_question", tipo: "multiple" }));
+}
 btnAbrirBuzzers.onclick = () => socket.send(JSON.stringify({ action: "open_buzzers" }));
 btnCorrecto.onclick = () => socket.send(JSON.stringify({ action: "answer_correct" }));
 btnIncorrecto.onclick = () => socket.send(JSON.stringify({ action: "answer_incorrect" }));
@@ -204,5 +216,4 @@ btnCambiarPin.onclick = () => {
   }
 };
 
-// Iniciar al cargar
 conectarHost();

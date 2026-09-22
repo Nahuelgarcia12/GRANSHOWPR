@@ -8,7 +8,7 @@
 </head>
 <body>
 
-  <!-- VISTA 1: LOBBY -->
+  <!-- VISTA 1: LOBBY DE INGRESO -->
   <section id="vista-lobby" class="pantalla-completa">
     <header class="lobby-header">
       <h1 class="titulo-show">EL GRAN SHOW</h1>
@@ -30,7 +30,7 @@
     </div>
   </section>
 
-  <!-- VISTA 2: JUEGO EN VIVO (TOTALMENTE LIMPIO) -->
+  <!-- VISTA 2: JUEGO EN VIVO -->
   <section id="vista-juego" class="pantalla-completa oculta">
     <header class="juego-header">
       <div class="logo-mini">EL GRAN SHOW</div>
@@ -47,22 +47,35 @@
         <div id="barra-progreso" class="barra-fill"></div>
       </div>
 
-      <!-- Grilla de opciones, solo visible en rondas de multiple choice -->
-      <div id="opciones-pantalla" class="opciones-pantalla oculta">
-        <div class="opcion-pantalla-item" data-index="0"><span class="opcion-letra">A</span><span class="opcion-texto"></span></div>
-        <div class="opcion-pantalla-item" data-index="1"><span class="opcion-letra">B</span><span class="opcion-texto"></span></div>
-        <div class="opcion-pantalla-item" data-index="2"><span class="opcion-letra">C</span><span class="opcion-texto"></span></div>
-        <div class="opcion-pantalla-item" data-index="3"><span class="opcion-letra">D</span><span class="opcion-texto"></span></div>
-      </div>
-
+      <!-- Modo Aberta: Cartel do xogador que premeu o pulsador -->
       <div id="cartel-turno" class="cartel-turno oculta">
         <span class="sub-turno">¡PULSÓ PRIMERO!</span>
         <h2 id="turno-nombre">JUGADOR</h2>
       </div>
+
+      <!-- Modo Multiple Choice: Panel 2x2 con tarxetas grandes -->
+      <div id="opciones-pantalla" class="opciones-pantalla oculta">
+        <div class="opcion-pantalla-item" data-index="0">
+          <span class="opcion-letra">A</span>
+          <span class="opcion-texto">---</span>
+        </div>
+        <div class="opcion-pantalla-item" data-index="1">
+          <span class="opcion-letra">B</span>
+          <span class="opcion-texto">---</span>
+        </div>
+        <div class="opcion-pantalla-item" data-index="2">
+          <span class="opcion-letra">C</span>
+          <span class="opcion-texto">---</span>
+        </div>
+        <div class="opcion-pantalla-item" data-index="3">
+          <span class="opcion-letra">D</span>
+          <span class="opcion-texto">---</span>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- VISTA 3: TABLA DE POSICIONES DEDICADA -->
+  <!-- VISTA 3: TABLA DE POSICIONES -->
   <section id="vista-ranking" class="pantalla-completa oculta">
     <header class="lobby-header">
       <h1 class="titulo-show">📊 TABLA DE POSICIONES 📊</h1>
@@ -74,7 +87,7 @@
     </div>
   </section>
 
-  <!-- VISTA 4: GRAN PODIO FINAL -->
+  <!-- VISTA 4: PODIO FINAL -->
   <section id="vista-podio" class="pantalla-completa oculta">
     <header class="lobby-header">
       <h1 class="titulo-show">🏆 ¡GRAN PODIO FINAL! 🏆</h1>

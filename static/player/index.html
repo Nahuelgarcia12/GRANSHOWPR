@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>El Gran Show - Pulsador</title>
+  <title>El Gran Show - Jugador</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- PANTALLA 1: INGRESO CON APODO Y PIN / QR -->
- <!-- PANTALLA 1: INGRESO CON PIN VISIBLE Y APODO -->
+  <!-- PANTALLA 1: INGRESO CON PIN VISIBLE Y APODO -->
   <div id="pantalla-login" class="contenedor flex-col">
     <div class="logo-titulo">EL GRAN SHOW</div>
 
@@ -43,7 +42,7 @@
       <div id="player-score" class="score-txt">⭐ 0 pts</div>
     </div>
 
-    <!-- Barra de lectura -->
+    <!-- Barra de tiempo / lectura -->
     <div class="reading-section">
       <p id="reading-msg" class="reading-txt">Esperando inicio de tanda...</p>
       <div class="bar-container">
@@ -51,19 +50,39 @@
       </div>
     </div>
 
-    <!-- Pulsador 3D -->
-    <div class="buzzer-wrapper">
+    <!-- Caja de consigna de la pregunta -->
+    <div id="pregunta-player-box" class="pregunta-player-box oculta">
+      <p id="player-question-txt" class="pregunta-player-txt"></p>
+    </div>
+
+    <!-- MODO A: Pulsador 3D para preguntas abiertas -->
+    <div id="buzzer-wrapper" class="buzzer-wrapper">
       <button id="buzzer-btn" class="buzzer-btn disabled" disabled>
         <span class="buzzer-top">¡PULSAR!</span>
       </button>
     </div>
 
-    <!-- Caja de pregunta (oculta en espera) -->
-    <div id="pregunta-player-box" class="pregunta-player-box oculta">
-      <p id="player-question-txt" class="pregunta-player-txt"></p>
+    <!-- MODO B: Cuadrícula de 4 opciones para Multiple Choice (oculta por defecto) -->
+    <div id="opciones-wrapper" class="opciones-grid oculta">
+      <button class="opcion-btn btn-opcion-a" data-index="0">
+        <span class="opcion-letra">A</span>
+        <span class="opcion-texto">---</span>
+      </button>
+      <button class="opcion-btn btn-opcion-b" data-index="1">
+        <span class="opcion-letra">B</span>
+        <span class="opcion-texto">---</span>
+      </button>
+      <button class="opcion-btn btn-opcion-c" data-index="2">
+        <span class="opcion-letra">C</span>
+        <span class="opcion-texto">---</span>
+      </button>
+      <button class="opcion-btn btn-opcion-d" data-index="3">
+        <span class="opcion-letra">D</span>
+        <span class="opcion-texto">---</span>
+      </button>
     </div>
 
-    <!-- Card de feedback (OCULTA POR DEFECTO: solo aparece en turno/rebote) -->
+    <!-- Card de feedback (muestra si ganaste el turno, si acertaste o si fallaste) -->
     <div id="feedback-card" class="feedback-card oculta">
       <div id="feedback-icon" class="fb-icon">🎤</div>
       <div class="feedback-texts">

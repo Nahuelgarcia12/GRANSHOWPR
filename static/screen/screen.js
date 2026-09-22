@@ -30,31 +30,28 @@ const p2Pts = document.getElementById("podio-p2-pts");
 const p3Nombre = document.getElementById("podio-p3-nombre");
 const p3Pts = document.getElementById("podio-p3-pts");
 
-// La sala viene SIEMPRE en la URL de esta pantalla (ej: /static/screen/?room=4821),
-// ya no existe un "PIN activo" global porque puede haber varias salas a la vez.
 function obtenerRoomDeLaURL() {
   const params = new URLSearchParams(window.location.search);
   return params.get("room");
 }
 
-function mostrarErrorSinSala(mensaje) {
-  categoriaTag.innerText = "ERROR";
-  consignaPantalla.innerText = mensaje;
-  cambiarVista(vistaJuego);
+function cambiarVista(vistaActiva) {
+  [vistaLobby, vistaJuego, vistaRanking, vistaPodio].forEach(v => {
+    if (v) v.classList.add("oculta");
+  });
+  if (vistaActiva) vistaActiva.classList.remove("oculta");
 }
 
 function conectarPantalla() {
   const roomPin = obtenerRoomDeLaURL();
-
-  if (!roomPin) {
-    mostrarErrorSinSala("Falta el código de sala en el link. Pedile al host que te comparta el link actualizado.");
-    return;
-  }
-
   const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const wsUrl = `${wsProtocol}//${window.location.host}/ws?room=${roomPin}`;
 
-  if (qrImg) qrImg.src = `/api/qr?room=${roomPin}`;
+  const query = roomPin ? `?room=${roomPin}` : "";
+  const wsUrl = `${wsProtocol}//${window.location.host}/ws${query}`;
+
+  if (roomPin && qrImg) {
+    qrImg.src = `/api/qr?room=${roomPin}`;
+  }
 
   socket = new WebSocket(wsUrl);
 
@@ -72,25 +69,61 @@ function conectarPantalla() {
   };
 }
 
-function cambiarVista(vistaActiva) {
-  [vistaLobby, vistaJuego, vistaRanking, vistaPodio].forEach(v => {
-    if (v) v.classList.add("oculta");
+function actualizarSalaEnPantalla(nuevoPin) {
+  if (pinTxt) pinTxt.innerText = nuevoPin;
+  if (pinMiniTxt) pinMiniTxt.innerText = nuevoPin;
+
+  if (qrImg) qrImg.src = `/api/qr?room=${nuevoPin}&t=${Date.now()}`;
+
+  actualizarLobbyJugadores([]);
+  window.history.replaceState({}, "", `${window.location.pathname}?room=${nuevoPin}`);
+  cambiarVista(vistaLobby);
+}
+
+// Limpia textos que tengan letras prefijadas tipo "AWhitney" o "A) Whitney"
+function limpiarTextoOpcion(texto) {
+  if (!texto) return "";
+  return String(texto).replace(/^[A-Da-d][\)\.\:\-\s]+|^[A-Da-d](?=[A-ZÁÉÍÓÚa-záéíóú])/, "").trim();
+}
+
+function mostrarOpcionesPantalla(opciones) {
+  if (!opcionesPantalla) return;
+  opcionesPantalla.classList.remove("oculta");
+
+  opcionItems.forEach((item, i) => {
+    item.classList.remove("correcta", "opaca");
+    const textoEl = item.querySelector(".opcion-texto");
+    if (textoEl) {
+      textoEl.innerText = limpiarTextoOpcion(opciones[i] || "");
+    }
   });
-  if (vistaActiva) vistaActiva.classList.remove("oculta");
+}
+
+function revelarOpcionesPantalla(respuestaCorrecta) {
+  const correctaLimpia = limpiarTextoOpcion(respuestaCorrecta).toLowerCase();
+
+  opcionItems.forEach((item) => {
+    const textoEl = item.querySelector(".opcion-texto");
+    const valor = textoEl ? textoEl.innerText.trim().toLowerCase() : "";
+
+    if (valor === correctaLimpia) {
+      item.classList.add("correcta");
+      item.classList.remove("opaca");
+    } else {
+      item.classList.add("opaca");
+      item.classList.remove("correcta");
+    }
+  });
 }
 
 function procesarEventoPantalla(data) {
   switch (data.event) {
-    case "auth_error":
-      mostrarErrorSinSala(data.message || "No se pudo conectar a la sala.");
+    case "sync_screen":
+      actualizarSalaEnPantalla(data.room_pin);
       break;
 
-    case "sync_screen":
-      if (data.room_pin) {
-        pinTxt.innerText = data.room_pin;
-        pinMiniTxt.innerText = data.room_pin;
-      }
-      cambiarVista(vistaLobby);
+    case "room_reset":
+      actualizarSalaEnPantalla(data.new_pin);
       break;
 
     case "player_joined":
@@ -133,16 +166,16 @@ function procesarEventoPantalla(data) {
     case "round_result":
       cartelTurno.classList.add("oculta");
       if (data.status === "correct") {
-        consignaPantalla.innerText = `¡PUNTO PARA ${data.winner_name.toUpperCase()}! Era: ${data.respuesta_correcta}`;
+        consignaPantalla.innerText = `¡PUNTO PARA ${data.winner_name.toUpperCase()}! Era: ${limpiarTextoOpcion(data.respuesta_correcta)}`;
       } else {
-        consignaPantalla.innerText = `Ronda finalizada. Era: ${data.respuesta_correcta}`;
+        consignaPantalla.innerText = `Ronda finalizada. Era: ${limpiarTextoOpcion(data.respuesta_correcta)}`;
       }
       break;
 
     case "mc_result":
       detenerBarra();
       revelarOpcionesPantalla(data.respuesta_correcta);
-      consignaPantalla.innerText = `La respuesta correcta era: ${data.respuesta_correcta}`;
+      consignaPantalla.innerText = `¡RESPUESTA CORRECTA: ${limpiarTextoOpcion(data.respuesta_correcta).toUpperCase()}!`;
       break;
 
     case "show_leaderboard":
@@ -197,25 +230,6 @@ function renderLeaderboardCompleto(leaderboard) {
       <span class="puntos">${p.score} pts</span>
     </li>
   `).join("");
-}
-
-function mostrarOpcionesPantalla(opciones) {
-  opcionesPantalla.classList.remove("oculta");
-  opcionItems.forEach((item, i) => {
-    item.classList.remove("correcta");
-    const texto = item.querySelector(".opcion-texto");
-    if (texto) texto.innerText = opciones[i] || "";
-  });
-}
-
-function revelarOpcionesPantalla(respuestaCorrecta) {
-  opcionItems.forEach((item) => {
-    const texto = item.querySelector(".opcion-texto");
-    const valor = texto ? texto.innerText : "";
-    if (valor === respuestaCorrecta) {
-      item.classList.add("correcta");
-    }
-  });
 }
 
 function animarBarra(segundos) {

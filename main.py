@@ -34,25 +34,22 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-# --- MODELOS PARA EL PANEL DE PREGUNTAS ---
 class PreguntaIn(BaseModel):
     consigna: str
     respuesta_correcta: str
     categoria: str
     tipo: str = "abierta"
-    opciones: Optional[List[str]] = None  # solo se usa si tipo == "multiple"
+    opciones: Optional[List[str]] = None
 
 
 @app.post("/api/preguntas")
 def api_nueva_pregunta(data: PreguntaIn):
-    # El banco de preguntas es compartido por todas las salas (no es por evento).
     nuevo_id = insert_question(
         data.consigna, data.respuesta_correcta, data.categoria, data.tipo, data.opciones
     )
     return {"status": "ok", "id": nuevo_id, "mensaje": "Pregunta guardada"}
 
 
-# --- UNA SALA = UNA PARTIDA/EVENTO, CON SU PROPIO ESTADO AISLADO ---
 class GameManager:
     def __init__(self, room_pin: str):
         self.room_pin: str = room_pin
@@ -62,17 +59,14 @@ class GameManager:
         self.screen_socket: Optional[WebSocket] = None
 
         self.modulo_actual: Optional[str] = "trivia"
-
         self.questions_queue: List[dict] = []
         self.current_question: Optional[dict] = None
         self.state: str = "LOBBY"
 
-        # Estado específico de preguntas ABIERTAS (pulsador)
         self.buzzer_winner: Optional[str] = None
         self.rebote_disponible: bool = True
         self.reading_task: Optional[asyncio.Task] = None
 
-        # Estado específico de preguntas MULTIPLE CHOICE
         self.mc_deadline_task: Optional[asyncio.Task] = None
         self.mc_time_limit: int = 15
         self.mc_round_start: Optional[float] = None
@@ -88,20 +82,18 @@ class GameManager:
             self.screen_socket = None
 
     async def broadcast(self, data: dict):
-        """Manda el mismo mensaje a TODOS los conectados de ESTA sala (host, screen, jugadores)."""
         msg = json.dumps(data)
-        for ws in self.connections:
+        for ws in list(self.connections):
             try:
                 await ws.send_text(msg)
             except Exception:
                 pass
 
     async def broadcast_split(self, data_public: dict, data_host_extra: dict):
-        """Versión sin datos sensibles a jugadores/pantalla; versión completa solo al host."""
         msg_public = json.dumps(data_public)
         msg_host = json.dumps({**data_public, **data_host_extra})
 
-        for ws in self.connections:
+        for ws in list(self.connections):
             try:
                 if ws == self.host_socket:
                     await ws.send_text(msg_host)
@@ -120,7 +112,6 @@ class GameManager:
             p["mc_answer"] = None
             p["mc_elapsed"] = None
 
-    # ---------- LÓGICA PREGUNTAS ABIERTAS (pulsador) ----------
     async def auto_open_buzzers(self, seconds: int = 6):
         try:
             await asyncio.sleep(seconds)
@@ -130,7 +121,6 @@ class GameManager:
         except asyncio.CancelledError:
             pass
 
-    # ---------- LÓGICA MULTIPLE CHOICE (todos responden a la vez) ----------
     async def auto_reveal_mc(self, seconds: int):
         try:
             await asyncio.sleep(seconds)
@@ -140,12 +130,12 @@ class GameManager:
             pass
 
     def calcular_puntos_mc(self, elapsed: float) -> int:
-        """10 a 20 puntos según velocidad de respuesta. Mínimo garantizado: 10."""
+        """500 base + hasta 500 según velocidad (rango: 500 a 1000 pts)."""
         if elapsed is None:
             elapsed = self.mc_time_limit
         fraccion_restante = max(0.0, 1 - (elapsed / self.mc_time_limit))
-        bonus_velocidad = round(10 * fraccion_restante)
-        return 10 + bonus_velocidad
+        bonus_velocidad = round(500 * fraccion_restante)
+        return 500 + bonus_velocidad
 
     async def reveal_mc_results(self):
         if not self.current_question:
@@ -174,7 +164,6 @@ class GameManager:
         })
 
 
-# --- REGISTRO DE SALAS ACTIVAS (esto es lo que habilita multi-sala) ---
 class RoomRegistry:
     def __init__(self):
         self.rooms: Dict[str, GameManager] = {}
@@ -194,9 +183,12 @@ class RoomRegistry:
     def obtener_sala(self, pin: str) -> Optional[GameManager]:
         return self.rooms.get(pin)
 
+    def obtener_ultima_sala(self) -> Optional[GameManager]:
+        if self.rooms:
+            return list(self.rooms.values())[-1]
+        return None
+
     def eliminar_sala_si_vacia(self, pin: str):
-        """Si una sala se queda sin nadie conectado (host, screen y jugadores),
-        la limpiamos para no acumular memoria con salas fantasma."""
         sala = self.rooms.get(pin)
         if sala and not sala.connections:
             del self.rooms[pin]
@@ -207,30 +199,29 @@ registry = RoomRegistry()
 
 @app.get("/api/qr")
 def generar_qr(request: Request, room: str):
-    """
-    Genera un QR que apunta directo a la sala indicada, usando la misma
-    dirección (IP local o dominio) que el navegador usó para pedir esta
-    página. El jugador que escanea entra directo a esa sala, sin tener
-    que tipear el PIN a mano.
-    """
     host = request.headers.get("host")
     esquema = "https" if request.url.scheme == "https" else "http"
-    player_url = f"{esquema}://{host}/static/player/?room={room}"
+    player_url = f"{esquema}://{host}/static/player/index.html?room={room}"
 
     img = qrcode.make(player_url)
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
-
     return StreamingResponse(buffer, media_type="image/png")
+
+
+@app.get("/api/sala-activa")
+def obtener_sala_activa():
+    sala = registry.obtener_ultima_sala()
+    if sala:
+        return {"status": "ok", "room_pin": sala.room_pin}
+    return {"status": "error", "room_pin": None}
 
 
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
     await ws.accept()
 
-    # Si la URL trae ?room=XXXX (por ejemplo, el host recargó la página, o la
-    # pantalla/jugador llegaron con un link que ya incluye la sala), lo usamos.
     room_param = ws.query_params.get("room")
     sala: Optional[GameManager] = None
 
@@ -240,13 +231,10 @@ async def websocket_endpoint(ws: WebSocket):
             data = json.loads(text_data)
             action = data.get("action")
 
-            # 1. IDENTIFICACIÓN Y AUTENTICACIÓN (acá es donde se elige/crea la sala)
             if action == "register":
                 role = data.get("role")
 
                 if role == "host":
-                    # Si la URL ya traía una sala activa válida, reconectamos ahí
-                    # (por ejemplo, recargó la página sin querer). Si no, sala nueva.
                     existente = registry.obtener_sala(room_param) if room_param else None
                     sala = existente or registry.crear_sala()
 
@@ -262,20 +250,8 @@ async def websocket_endpoint(ws: WebSocket):
                     }))
 
                 elif role == "screen":
-                    if not room_param:
-                        await ws.send_text(json.dumps({
-                            "event": "auth_error",
-                            "message": "Falta el código de sala en el link de la pantalla."
-                        }))
-                        continue
-
-                    sala = registry.obtener_sala(room_param)
-                    if not sala:
-                        await ws.send_text(json.dumps({
-                            "event": "auth_error",
-                            "message": "Esa sala ya no existe. Pedile al host el link actualizado."
-                        }))
-                        continue
+                    existente = registry.obtener_sala(room_param) if room_param else None
+                    sala = existente or registry.obtener_ultima_sala() or registry.crear_sala()
 
                     sala.connections.append(ws)
                     sala.screen_socket = ws
@@ -315,42 +291,47 @@ async def websocket_endpoint(ws: WebSocket):
                         "players": sala.get_leaderboard()
                     })
 
-                continue  # el resto de las acciones necesita ya tener `sala` asignada
+                continue
 
-            # A partir de acá, todas las acciones son sobre la sala ya identificada.
             if sala is None:
                 continue
 
-            # 2. REINICIAR SALA (CAMBIO DE PIN): en multi-sala esto no tiene sentido
-            # tal como antes (¿"la" sala? ¿cuál?). Lo reemplazamos por "crear sala nueva"
-            # desde cero para este host, dejando la vieja disponible hasta que quede vacía.
             if action == "reset_room":
                 vieja = sala
                 nueva = registry.crear_sala()
-                nueva.connections.append(ws)
-                nueva.host_socket = ws
-                if vieja.host_socket == ws:
-                    vieja.host_socket = None
+
+                await vieja.broadcast({
+                    "event": "room_reset",
+                    "new_pin": nueva.room_pin
+                })
+
                 if ws in vieja.connections:
                     vieja.connections.remove(ws)
-                registry.eliminar_sala_si_vacia(vieja.room_pin)
-                sala = nueva
-                await ws.send_text(json.dumps({
-                    "event": "room_reset",
-                    "new_pin": sala.room_pin
-                }))
+                nueva.connections.append(ws)
+                nueva.host_socket = ws
 
-            # 3. LANZAR PREGUNTA (abierta O multiple choice, según 'tipo')
+                sala = nueva
+                registry.eliminar_sala_si_vacia(vieja.room_pin)
+
             elif action == "next_question":
-                if not sala.questions_queue:
-                    sala.questions_queue = get_random_questions(limit=30)
+                tipo_pedido = data.get("tipo")  # "abierta" o "multiple"
+
+                if tipo_pedido:
+                    candidatas = get_random_questions(limit=1, tipo=tipo_pedido)
+                    sala.current_question = candidatas[0] if candidatas else None
+                else:
+                    if not sala.questions_queue:
+                        sala.questions_queue = get_random_questions(limit=30)
+                    sala.current_question = sala.questions_queue.pop(0) if sala.questions_queue else None
+
+                if not sala.current_question:
+                    continue
 
                 if sala.reading_task and not sala.reading_task.done():
                     sala.reading_task.cancel()
                 if sala.mc_deadline_task and not sala.mc_deadline_task.done():
                     sala.mc_deadline_task.cancel()
 
-                sala.current_question = sala.questions_queue.pop(0)
                 sala.buzzer_winner = None
                 sala.rebote_disponible = True
                 sala.reset_player_round_state()
@@ -363,7 +344,6 @@ async def websocket_endpoint(ws: WebSocket):
                     random.shuffle(opciones_mezcladas)
 
                     sala.state = "MC_OPEN"
-
                     await sala.broadcast_split(
                         data_public={
                             "event": "new_question",
@@ -374,15 +354,14 @@ async def websocket_endpoint(ws: WebSocket):
                             "time_limit": sala.mc_time_limit
                         },
                         data_host_extra={
-                            "respuesta_correcta": sala.current_question["respuesta_correcta"]
+                            "respuesta_correcta": sala.current_question["respuesta_correcta"],
+                            "opciones": opciones_mezcladas
                         }
                     )
-
                     sala.mc_round_start = time.time()
                     sala.mc_deadline_task = asyncio.create_task(
                         sala.auto_reveal_mc(sala.mc_time_limit)
                     )
-
                 else:
                     sala.state = "READING"
                     await sala.broadcast_split(
@@ -399,7 +378,6 @@ async def websocket_endpoint(ws: WebSocket):
                     )
                     sala.reading_task = asyncio.create_task(sala.auto_open_buzzers(6))
 
-            # 4. ABRIR PULSADORES ANTES DE TIEMPO (solo preguntas abiertas)
             elif action == "open_buzzers":
                 if sala.state == "READING":
                     if sala.reading_task and not sala.reading_task.done():
@@ -407,7 +385,6 @@ async def websocket_endpoint(ws: WebSocket):
                     sala.state = "BUZZER_OPEN"
                     await sala.broadcast({"event": "buzzers_unlocked", "time_limit": 10})
 
-            # 5. PULSADOR PRESIONADO (solo preguntas abiertas)
             elif action == "press_buzzer":
                 if sala.state == "BUZZER_OPEN":
                     player = sala.players.get(ws)
@@ -420,7 +397,6 @@ async def websocket_endpoint(ws: WebSocket):
                             "speaking_time": 10
                         })
 
-            # 5b. RESPUESTA DE MULTIPLE CHOICE (todos responden a la vez)
             elif action == "submit_answer":
                 if sala.state == "MC_OPEN":
                     player = sala.players.get(ws)
@@ -443,12 +419,11 @@ async def websocket_endpoint(ws: WebSocket):
                                 sala.mc_deadline_task.cancel()
                             await sala.reveal_mc_results()
 
-            # 6. RESPUESTA CORRECTA (solo preguntas abiertas)
             elif action == "answer_correct":
                 if sala.state == "ANSWERING":
                     for p in sala.players.values():
                         if p["name"] == sala.buzzer_winner:
-                            p["score"] += 10
+                            p["score"] += 1000  # 1000 PUNTOS POR PREGUNTA ABIERTA
                             break
 
                     sala.state = "ROUND_OVER"
@@ -460,7 +435,6 @@ async def websocket_endpoint(ws: WebSocket):
                         "leaderboard": sala.get_leaderboard()
                     })
 
-            # 7. RESPUESTA INCORRECTA (solo preguntas abiertas)
             elif action == "answer_incorrect":
                 if sala.state == "ANSWERING":
                     for p in sala.players.values():
@@ -485,7 +459,6 @@ async def websocket_endpoint(ws: WebSocket):
                             "leaderboard": sala.get_leaderboard()
                         })
 
-            # 8. ANULAR RONDA
             elif action == "round_null":
                 if sala.reading_task and not sala.reading_task.done():
                     sala.reading_task.cancel()
@@ -499,7 +472,6 @@ async def websocket_endpoint(ws: WebSocket):
                     "leaderboard": sala.get_leaderboard()
                 })
 
-            # 9. MOSTRAR TABLA DE POSICIONES A DEMANDA
             elif action == "show_leaderboard":
                 sala.state = "LEADERBOARD"
                 await sala.broadcast({
@@ -507,7 +479,6 @@ async def websocket_endpoint(ws: WebSocket):
                     "leaderboard": sala.get_leaderboard()
                 })
 
-            # 10. PODIO FINAL
             elif action == "finish_game":
                 sala.state = "PODIUM"
                 await sala.broadcast({

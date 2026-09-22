@@ -38,7 +38,7 @@ def init_db():
 
     _asegurar_columna_opciones(cursor)
 
-    # Comprobar si ya tiene preguntas cargadas (no sobreescribe tus 300 preguntas)
+    # Comprobar si ya tiene preguntas cargadas (no sobreescribe tus preguntas existentes)
     cursor.execute("SELECT COUNT(*) FROM preguntas")
     if cursor.fetchone()[0] == 0:
         preguntas_semilla = [
@@ -60,26 +60,32 @@ def init_db():
     conn.close()
 
 
-def get_next_question_excluding(excluded_ids: set) -> Optional[Dict[str, Any]]:
-    """Trae una única pregunta aleatoria omitiendo los IDs ya jugados (flujo continuo sin repetición)."""
+def get_next_question_excluding(excluded_ids: set, tipo: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """Trae una única pregunta aleatoria omitiendo los IDs ya jugados con filtro opcional por tipo."""
     conn = get_connection()
     cursor = conn.cursor()
 
+    condiciones = []
+    parametros = []
+
     if excluded_ids:
         placeholders = ",".join("?" * len(excluded_ids))
-        query = f"""
-            SELECT id, consigna, respuesta_correcta, categoria, tipo, opciones 
-            FROM preguntas 
-            WHERE id NOT IN ({placeholders}) 
-            ORDER BY RANDOM() LIMIT 1
-        """
-        cursor.execute(query, list(excluded_ids))
-    else:
-        cursor.execute("""
-            SELECT id, consigna, respuesta_correcta, categoria, tipo, opciones 
-            FROM preguntas 
-            ORDER BY RANDOM() LIMIT 1
-        """)
+        condiciones.append(f"id NOT IN ({placeholders})")
+        parametros.extend(list(excluded_ids))
+
+    if tipo:
+        condiciones.append("tipo = ?")
+        parametros.append(tipo)
+
+    where_clause = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
+
+    query = f"""
+        SELECT id, consigna, respuesta_correcta, categoria, tipo, opciones 
+        FROM preguntas 
+        {where_clause}
+        ORDER BY RANDOM() LIMIT 1
+    """
+    cursor.execute(query, parametros)
 
     row = cursor.fetchone()
     conn.close()
@@ -97,14 +103,22 @@ def get_next_question_excluding(excluded_ids: set) -> Optional[Dict[str, Any]]:
     return item
 
 
-def get_random_questions(limit: int = 25) -> List[Dict[str, Any]]:
-    """Trae un lote de preguntas ordenadas al azar con soporte de deserialización JSON."""
+def get_random_questions(limit: int = 25, tipo: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Trae un lote de preguntas ordenadas al azar, filtrando opcionalmente por tipo ('abierta' o 'multiple')."""
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        "SELECT id, consigna, respuesta_correcta, categoria, tipo, opciones FROM preguntas ORDER BY RANDOM() LIMIT ?",
-        (limit,)
-    )
+
+    if tipo:
+        cursor.execute(
+            "SELECT id, consigna, respuesta_correcta, categoria, tipo, opciones FROM preguntas WHERE tipo = ? ORDER BY RANDOM() LIMIT ?",
+            (tipo, limit)
+        )
+    else:
+        cursor.execute(
+            "SELECT id, consigna, respuesta_correcta, categoria, tipo, opciones FROM preguntas ORDER BY RANDOM() LIMIT ?",
+            (limit,)
+        )
+
     rows = cursor.fetchall()
     conn.close()
 
