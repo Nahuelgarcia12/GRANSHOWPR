@@ -16,8 +16,6 @@ const boxOpcionesHost = document.getElementById("box-opciones-host");
 const listaOpcionesHost = document.getElementById("lista-opciones-host");
 
 const txtPinSala = document.getElementById("txt-pin-sala");
-const inputLinkPantalla = document.getElementById("input-link-pantalla");
-const btnCopiarLink = document.getElementById("btn-copiar-link");
 
 const btnLanzar = document.getElementById("btn-siguiente");
 const btnLanzarMC = document.getElementById("btn-siguiente-mc");
@@ -31,14 +29,6 @@ const btnVerRanking = document.getElementById("btn-ver-ranking");
 
 btnVerRanking.onclick = () => {
   socket.send(JSON.stringify({ action: "show_leaderboard" }));
-};
-
-btnCopiarLink.onclick = () => {
-  inputLinkPantalla.select();
-  navigator.clipboard.writeText(inputLinkPantalla.value).then(() => {
-    btnCopiarLink.innerText = "✅ COPIADO";
-    setTimeout(() => { btnCopiarLink.innerText = "📋 COPIAR"; }, 1500);
-  }).catch(() => {});
 };
 
 function obtenerRoomDeLaURL() {
@@ -76,9 +66,6 @@ function actualizarInfoSala(pin) {
 
   const nuevaUrl = `${window.location.pathname}?room=${pin}`;
   window.history.replaceState({}, "", nuevaUrl);
-
-  const linkPantalla = `${window.location.origin}/static/screen/index.html?room=${pin}`;
-  inputLinkPantalla.value = linkPantalla;
 }
 
 function procesarEventoHost(data) {
@@ -200,7 +187,7 @@ function actualizarRanking(lista) {
   `).join("");
 }
 
-// Mandos del Host con selección de modalidad
+// Mandos del Host
 btnLanzar.onclick = () => socket.send(JSON.stringify({ action: "next_question", tipo: "abierta" }));
 if (btnLanzarMC) {
   btnLanzarMC.onclick = () => socket.send(JSON.stringify({ action: "next_question", tipo: "multiple" }));
